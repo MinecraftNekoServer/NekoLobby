@@ -14,6 +14,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.World;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -103,6 +104,9 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             Location spawnLocation = new Location(getServer().getWorld(worldName), x, y, z, yaw, pitch);
             player.teleport(spawnLocation);
         }
+        
+        // 移除默认的加入消息
+        event.setJoinMessage(null);
     }
     
     // 阻止方块破坏
@@ -133,6 +137,12 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             event.setCancelled(true);
             player.sendMessage(ChatColor.RED + "你没有权限与方块交互!");
         }
+    }
+    
+    // 移除玩家退出消息
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        event.setQuitMessage(null);
     }
     
     private void lockTimeToDay() {
