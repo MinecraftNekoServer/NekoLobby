@@ -26,10 +26,15 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
-
+import org.bukkit.event.player.PlayerToggleFlightEvent;
+import org.bukkit.event.player.PlayerToggleSneakEvent;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public final class NekoLobby extends JavaPlugin implements Listener {
+    // 存储玩家双击空格时间的Map
+    private Map<Player, Long> lastSpacePress = new HashMap<>();
 
     @Override
     public void onEnable() {
@@ -93,6 +98,11 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
             Location spawnLocation = new Location(getServer().getWorld(worldName), x, y, z, yaw, pitch);
             player.teleport(spawnLocation);
+        }
+
+        // 给有权限的玩家开启飞行能力
+        if (player.hasPermission("nekospawn.fly")) {
+            player.setAllowFlight(true);
         }
 
         PlayerInventory inv = player.getInventory();
@@ -179,7 +189,65 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent e) {
+        Player player = e.getPlayer();
+        // 清除玩家数据
+        lastSpacePress.remove(player);
         e.setQuitMessage(null);
+    }
+    
+    // 处理玩家切换飞行状态
+    @EventHandler
+    public void onPlayerToggleFlight(PlayerToggleFlightEvent event) {
+        Player player = event.getPlayer();
+        // 检查玩家是否有飞行权限
+        if (!player.hasPermission("nekospawn.fly")) {
+            event.setCancelled(true);
+            player.setFlying(false);
+            player.sendMessage(ChatColor.RED + "你没有权限使用飞行功能!");
+        }
+    }
+    
+    // 处理玩家双击空格飞行
+    @EventHandler
+    public void onPlayerToggleSneak(PlayerToggleSneakEvent event) {
+        Player player = event.getPlayer();
+        
+        // 检查玩家是否有飞行权限
+        if (!player.hasPermission("nekospawn.fly")) {
+            return;
+        }
+        
+        // 只在玩家按住空格键时触发（潜行）
+        if (!event.isSneaking()) {
+            return;
+        }
+        
+        // 检查玩家是否在地面上
+        if (!player.isOnGround()) {
+            return;
+        }
+        
+        // 获取上次按下空格的时间
+        long lastPress = lastSpacePress.getOrDefault(player, 0L);
+        long currentTime = System.currentTimeMillis();
+        
+        // 如果在500毫秒内双击空格
+        if (currentTime - lastPress < 500) {
+            // 切换飞行状态
+            if (player.getAllowFlight()) {
+                player.setFlying(!player.isFlying());
+                if (player.isFlying()) {
+                    player.sendMessage(ChatColor.GREEN + "飞行已开启!");
+                } else {
+                    player.sendMessage(ChatColor.RED + "飞行已关闭!");
+                }
+            }
+            // 重置时间
+            lastSpacePress.remove(player);
+        } else {
+            // 记录按下空格的时间
+            lastSpacePress.put(player, currentTime);
+        }
     }
 
     @EventHandler
