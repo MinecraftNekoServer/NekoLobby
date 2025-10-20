@@ -15,6 +15,9 @@ import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.World;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 
 public final class NekoLobby extends JavaPlugin implements Listener {
 
@@ -99,6 +102,36 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             
             Location spawnLocation = new Location(getServer().getWorld(worldName), x, y, z, yaw, pitch);
             player.teleport(spawnLocation);
+        }
+    }
+    
+    // 阻止方块破坏
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent event) {
+        Player player = event.getPlayer();
+        if (!player.hasPermission("nekospawn.build")) {
+            event.setCancelled(true);
+            //player.sendMessage(ChatColor.RED + "你没有权限破坏方块!");
+        }
+    }
+    
+    // 阻止方块放置
+    @EventHandler
+    public void onBlockPlace(BlockPlaceEvent event) {
+        Player player = event.getPlayer();
+        if (!player.hasPermission("nekospawn.build")) {
+            event.setCancelled(true);
+            player.sendMessage(ChatColor.RED + "你没有权限放置方块!");
+        }
+    }
+    
+    // 阻止与方块交互
+    @EventHandler
+    public void onPlayerInteract(PlayerInteractEvent event) {
+        Player player = event.getPlayer();
+        if (!player.hasPermission("nekospawn.build")) {
+            event.setCancelled(true);
+            player.sendMessage(ChatColor.RED + "你没有权限与方块交互!");
         }
     }
     
