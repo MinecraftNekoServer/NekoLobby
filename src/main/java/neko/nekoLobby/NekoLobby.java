@@ -191,19 +191,19 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         Player p = e.getPlayer();
         ItemStack item = e.getItem();
         
-        // 只处理右键点击事件，并确保事件只处理一次
-        if (e.getAction().name().contains("RIGHT") && !e.isCancelled()) {
-            if (item == null) return;
+        // 处理所有右键点击事件（包括对空气点击）
+        if (e.getAction().name().contains("RIGHT")) {
+            // 检查是否为空气点击，如果是则获取手中物品
+            if (item == null) {
+                // 获取玩家当前选中的物品
+                item = p.getInventory().getItemInHand();
+                // 如果仍然为空则返回
+                if (item == null) return;
+            }
 
             if (item.getType() == Material.COMPASS && p.getInventory().getHeldItemSlot() == 0) {
-                // 检查玩家是否在冷却时间内（防止重复触发）
-                if (p.hasPermission("nekospawn.use")) { // 添加一个使用权限检查
-                    getServer().dispatchCommand(p, "menu");
-                } else {
-                    // 如果没有权限，直接发送消息而不是执行指令
-                    p.sendMessage(ChatColor.GREEN + "打开游戏菜单...");
-                    // 这里可以添加打开自定义菜单的代码
-                }
+                // 移除权限检查，所有人都可以使用
+                getServer().dispatchCommand(p, "menu");
                 e.setCancelled(true);
                 return;
             }
@@ -221,12 +221,8 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             if (dyeMat != null && item.getType() == dyeMat && 
                 (item.getDurability() == 10 || item.getDurability() == 8) && 
                 p.getInventory().getHeldItemSlot() == 7) {
-                // 检查权限
-                if (p.hasPermission("nekospawn.hide")) {
-                    togglePlayerVisibility(p, item);
-                } else {
-                    p.sendMessage(ChatColor.RED + "你没有权限使用隐身功能!");
-                }
+                // 移除权限检查，所有人都可以使用
+                togglePlayerVisibility(p, item);
                 e.setCancelled(true);
             }
         }
