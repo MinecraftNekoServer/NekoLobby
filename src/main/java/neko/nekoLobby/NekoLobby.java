@@ -202,8 +202,8 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             }
 
             if (item.getType() == Material.COMPASS && p.getInventory().getHeldItemSlot() == 0) {
-                // 移除权限检查，所有人都可以使用
-                getServer().dispatchCommand(p, "menu");
+                // 让客户端解析指令而不是服务端执行
+                p.chat("/menu");
                 e.setCancelled(true);
                 return;
             }
