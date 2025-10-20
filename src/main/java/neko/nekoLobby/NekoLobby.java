@@ -144,7 +144,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         if (dyeMat != null) {
             ItemStack dye = new ItemStack(dyeMat, 1, (short) 10); // 黄绿色染料
             ItemMeta dyeMeta = dye.getItemMeta();
-            dyeMeta.setDisplayName(ChatColor.GREEN + "隐身开关");
+            dyeMeta.setDisplayName(ChatColor.GREEN + "隐藏玩家");
             dyeMeta.setLore(Collections.singletonList(ChatColor.GRAY + "右键切换玩家显示/隐藏"));
             dye.setItemMeta(dyeMeta);
             inv.setItem(7, dye);
