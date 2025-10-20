@@ -168,18 +168,29 @@ public final class NekoLobby extends JavaPlugin implements Listener {
     public void onPlayerUseItems(PlayerInteractEvent e) {
         Player p = e.getPlayer();
         ItemStack item = e.getItem();
-        if (item == null) return;
+        
+        // 只处理右键点击事件，并确保事件只处理一次
+        if (e.getAction().name().contains("RIGHT") && !e.isCancelled()) {
+            if (item == null) return;
 
-        if (item.getType() == Material.COMPASS && p.getInventory().getHeldItemSlot() == 0) {
-            p.performCommand("menu");
-            e.setCancelled(true);
-            return;
-        }
+            if (item.getType() == Material.COMPASS && p.getInventory().getHeldItemSlot() == 0) {
+                // 检查玩家是否在冷却时间内（防止重复触发）
+                if (p.hasPermission("nekospawn.use")) { // 添加一个使用权限检查
+                    getServer().dispatchCommand(p, "menu");
+                } else {
+                    // 如果没有权限，直接发送消息而不是执行指令
+                    p.sendMessage(ChatColor.GREEN + "打开游戏菜单...");
+                    // 这里可以添加打开自定义菜单的代码
+                }
+                e.setCancelled(true);
+                return;
+            }
 
-        Material skull = Material.matchMaterial("SKULL_ITEM");
-        if (skull != null && item.getType() == skull && item.getDurability() == 3 && p.getInventory().getHeldItemSlot() == 1) {
-            openPlayerProfileGUI(p);
-            e.setCancelled(true);
+            Material skull = Material.matchMaterial("SKULL_ITEM");
+            if (skull != null && item.getType() == skull && item.getDurability() == 3 && p.getInventory().getHeldItemSlot() == 1) {
+                openPlayerProfileGUI(p);
+                e.setCancelled(true);
+            }
         }
     }
 
@@ -203,7 +214,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         if (!player.hasPermission("nekospawn.fly")) {
             event.setCancelled(true);
             player.setFlying(false);
-            player.sendMessage(ChatColor.RED + "你没有权限使用飞行功能!");
+            //player.sendMessage(ChatColor.RED + "你没有权限使用飞行功能!");
         }
     }
     
