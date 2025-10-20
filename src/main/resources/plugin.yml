@@ -1,0 +1,6 @@
+name: NekoLobby
+version: '1.0-SNAPSHOT'
+main: neko.nekoLobby.NekoLobby
+api-version: '1.21'
+authors: [ 不穿胖次の小奶猫 ]
+website: https://cnmsb.xin/
