@@ -14,6 +14,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.World;
 
 public final class NekoLobby extends JavaPlugin implements Listener {
 
@@ -22,6 +23,9 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         // Plugin startup logic
         getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby] 插件已启动!");
         getServer().getPluginManager().registerEvents(this, this);
+        
+        // 锁定所有世界的时间为白天
+        lockTimeToDay();
     }
 
     @Override
@@ -54,6 +58,13 @@ public final class NekoLobby extends JavaPlugin implements Listener {
                 }
                 
                 Player player = (Player) sender;
+                
+                // 检查权限
+                if (!player.hasPermission("nekospawn.setspawn")) {
+                    player.sendMessage(ChatColor.RED + "你没有权限设置出生点!");
+                    return true;
+                }
+                
                 Location loc = player.getLocation();
                 
                 // 保存位置和朝向到配置文件
@@ -88,6 +99,13 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             
             Location spawnLocation = new Location(getServer().getWorld(worldName), x, y, z, yaw, pitch);
             player.teleport(spawnLocation);
+        }
+    }
+    
+    private void lockTimeToDay() {
+        for (World world : getServer().getWorlds()) {
+            world.setGameRuleValue("doDaylightCycle", "false");
+            world.setTime(6000); // 6000 ticks = 中午 (白天)
         }
     }
 }
