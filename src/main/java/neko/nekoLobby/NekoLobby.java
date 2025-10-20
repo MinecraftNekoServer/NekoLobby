@@ -28,13 +28,20 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.event.player.PlayerToggleFlightEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.player.PlayerExpChangeEvent;
+import org.bukkit.event.player.PlayerLevelChangeEvent;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 
 public final class NekoLobby extends JavaPlugin implements Listener {
     // 存储玩家双击空格时间的Map
     private Map<Player, Long> lastSpacePress = new HashMap<>();
+    // 存储隐藏玩家的集合
+    private Set<Player> hiddenPlayers = new HashSet<>();
 
     @Override
     public void onEnable() {
@@ -105,6 +112,10 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             player.setAllowFlight(true);
         }
 
+        // 移除饥饿值
+        player.setFoodLevel(20);
+        player.setSaturation(20.0f);
+
         PlayerInventory inv = player.getInventory();
         inv.clear();
 
@@ -126,6 +137,17 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             hMeta.setLore(Collections.singletonList(ChatColor.GRAY + "右键查看个人信息"));
             head.setItemMeta(hMeta);
             inv.setItem(1, head);
+        }
+        
+        // 黄绿色染料（隐身功能）
+        Material dyeMat = Material.matchMaterial("INK_SACK");
+        if (dyeMat != null) {
+            ItemStack dye = new ItemStack(dyeMat, 1, (short) 10); // 黄绿色染料
+            ItemMeta dyeMeta = dye.getItemMeta();
+            dyeMeta.setDisplayName(ChatColor.GREEN + "隐身开关");
+            dyeMeta.setLore(Collections.singletonList(ChatColor.GRAY + "右键切换玩家显示/隐藏"));
+            dye.setItemMeta(dyeMeta);
+            inv.setItem(7, dye);
         }
 
         event.setJoinMessage(null);
@@ -187,8 +209,24 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             }
 
             Material skull = Material.matchMaterial("SKULL_ITEM");
+            // 允许对着空气右键使用个人档案
             if (skull != null && item.getType() == skull && item.getDurability() == 3 && p.getInventory().getHeldItemSlot() == 1) {
                 openPlayerProfileGUI(p);
+                e.setCancelled(true);
+                return;
+            }
+            
+            // 处理隐身功能染料
+            Material dyeMat = Material.matchMaterial("INK_SACK");
+            if (dyeMat != null && item.getType() == dyeMat && 
+                (item.getDurability() == 10 || item.getDurability() == 8) && 
+                p.getInventory().getHeldItemSlot() == 7) {
+                // 检查权限
+                if (p.hasPermission("nekospawn.hide")) {
+                    togglePlayerVisibility(p, item);
+                } else {
+                    p.sendMessage(ChatColor.RED + "你没有权限使用隐身功能!");
+                }
                 e.setCancelled(true);
             }
         }
@@ -203,7 +241,71 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         Player player = e.getPlayer();
         // 清除玩家数据
         lastSpacePress.remove(player);
+        hiddenPlayers.remove(player);
         e.setQuitMessage(null);
+    }
+    
+    // 切换玩家可见性
+    private void togglePlayerVisibility(Player player, ItemStack dye) {
+        // 切换玩家隐藏状态
+        if (hiddenPlayers.contains(player)) {
+            // 显示所有玩家
+            for (Player onlinePlayer : getServer().getOnlinePlayers()) {
+                player.showPlayer(onlinePlayer);
+            }
+            hiddenPlayers.remove(player);
+            
+            // 将染料变为黄绿色
+            dye.setDurability((short) 10);
+            ItemMeta meta = dye.getItemMeta();
+            meta.setDisplayName(ChatColor.GREEN + "隐身开关");
+            meta.setLore(Collections.singletonList(ChatColor.GRAY + "右键切换玩家显示/隐藏"));
+            dye.setItemMeta(meta);
+            
+            player.sendMessage(ChatColor.GREEN + "玩家已显示");
+        } else {
+            // 隐藏所有玩家
+            for (Player onlinePlayer : getServer().getOnlinePlayers()) {
+                if (!onlinePlayer.equals(player)) { // 不隐藏自己
+                    player.hidePlayer(onlinePlayer);
+                }
+            }
+            hiddenPlayers.add(player);
+            
+            // 将染料变为灰色
+            dye.setDurability((short) 8);
+            ItemMeta meta = dye.getItemMeta();
+            meta.setDisplayName(ChatColor.GRAY + "隐身开关");
+            meta.setLore(Collections.singletonList(ChatColor.GRAY + "右键切换玩家显示/隐藏"));
+            dye.setItemMeta(meta);
+            
+            player.sendMessage(ChatColor.GRAY + "玩家已隐藏");
+        }
+        
+        // 更新玩家手中的物品
+        player.getInventory().setItem(7, dye);
+    }
+    
+    // 移除摔落伤害
+    @EventHandler
+    public void onEntityDamage(EntityDamageEvent event) {
+        if (event.getEntity() instanceof Player) {
+            Player player = (Player) event.getEntity();
+            // 只移除摔落伤害
+            if (event.getCause() == EntityDamageEvent.DamageCause.FALL) {
+                event.setCancelled(true);
+            }
+        }
+    }
+    
+    // 防止饥饿值下降
+    @EventHandler
+    public void onPlayerExpChange(PlayerExpChangeEvent event) {
+        Player player = event.getPlayer();
+        // 保持食物等级为最大值
+        if (player.getFoodLevel() < 20) {
+            player.setFoodLevel(20);
+        }
     }
     
     // 处理玩家切换飞行状态
