@@ -9,3 +9,7 @@ commands:
   spawn:
     description: 设置或传送至出生点
     usage: /spawn set
+  setrange:
+    description: 设置活动范围点
+    usage: /setrange <point1|point2>
+    permission: nekospawn.setrange

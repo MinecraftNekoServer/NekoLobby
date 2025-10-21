@@ -31,6 +31,7 @@ import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerExpChangeEvent;
 import org.bukkit.event.player.PlayerLevelChangeEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,12 +43,15 @@ public final class NekoLobby extends JavaPlugin implements Listener {
     private Map<Player, Long> lastSpacePress = new HashMap<>();
     // 存储隐藏玩家的集合
     private Set<Player> hiddenPlayers = new HashSet<>();
+    // 存储玩家上一个位置的Map
+    private Map<Player, Location> lastLocation = new HashMap<>();
 
     @Override
     public void onEnable() {
         getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby] 插件已启动!");
         getServer().getPluginManager().registerEvents(this, this);
         lockTimeToDay();
+        saveDefaultConfig(); // 保存默认配置文件
     }
 
     @Override
@@ -84,6 +88,36 @@ public final class NekoLobby extends JavaPlugin implements Listener {
                 getConfig().set("spawn.pitch", loc.getPitch());
                 saveConfig();
                 player.sendMessage(ChatColor.GREEN + "出生点已设置!");
+                return true;
+            }
+        } else if (command.getName().equalsIgnoreCase("setrange")) {
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(ChatColor.RED + "只有玩家可以设置活动范围!");
+                return true;
+            }
+            
+            Player player = (Player) sender;
+            if (!player.hasPermission("nekospawn.setrange")) {
+                player.sendMessage(ChatColor.RED + "你没有权限设置活动范围!");
+                return true;
+            }
+            
+            if (args.length < 1) {
+                player.sendMessage(ChatColor.RED + "用法: /setrange <point1|point2>");
+                return true;
+            }
+            
+            Location loc = player.getLocation();
+            String point = args[0].toLowerCase();
+            
+            if (point.equals("point1") || point.equals("point2")) {
+                getConfig().set("activity-range." + point + ".x", loc.getX());
+                getConfig().set("activity-range." + point + ".z", loc.getZ());
+                saveConfig();
+                player.sendMessage(ChatColor.GREEN + "活动范围 " + point + " 已设置为当前坐标: X=" + loc.getX() + ", Z=" + loc.getZ());
+                return true;
+            } else {
+                player.sendMessage(ChatColor.RED + "无效的点名称。请使用 point1 或 point2");
                 return true;
             }
         }
@@ -238,7 +272,99 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         // 清除玩家数据
         lastSpacePress.remove(player);
         hiddenPlayers.remove(player);
+        lastLocation.remove(player); // 清除玩家上一个位置数据
         e.setQuitMessage(null);
+    }
+    
+    // 检查玩家是否在活动范围内
+    @EventHandler
+    public void onPlayerMove(PlayerMoveEvent event) {
+        Player player = event.getPlayer();
+        FileConfiguration config = getConfig();
+        
+        // 检查Y坐标是否小于等于0，强制拉回出生点
+        Location currentLocation = player.getLocation();
+        if (currentLocation.getY() <= 0) {
+            // 拉回出生点
+            if (config.contains("spawn.world")) {
+                String worldName = config.getString("spawn.world");
+                double spawnX = config.getDouble("spawn.x");
+                double spawnY = config.getDouble("spawn.y");
+                double spawnZ = config.getDouble("spawn.z");
+                float yaw = (float) config.getDouble("spawn.yaw");
+                float pitch = (float) config.getDouble("spawn.pitch");
+                
+                Location spawnLocation = new Location(getServer().getWorld(worldName), spawnX, spawnY, spawnZ, yaw, pitch);
+                player.teleport(spawnLocation);
+                player.sendMessage(ChatColor.RED + "你不允许在这个范围之外");
+            }
+            return;
+        }
+        
+        // 获取活动范围的两个点坐标
+        double point1X = config.getDouble("activity-range.point1.x", 0);
+        double point1Z = config.getDouble("activity-range.point1.z", 0);
+        double point2X = config.getDouble("activity-range.point2.x", 0);
+        double point2Z = config.getDouble("activity-range.point2.z", 0);
+        
+        // 检查是否设置了活动范围（默认值为0表示不限制）
+        if (point1X != 0 || point1Z != 0 || point2X != 0 || point2Z != 0) {
+            // 计算活动范围的边界
+            double minX = Math.min(point1X, point2X);
+            double maxX = Math.max(point1X, point2X);
+            double minZ = Math.min(point1Z, point2Z);
+            double maxZ = Math.max(point1Z, point2Z);
+            
+            double x = currentLocation.getX();
+            double z = currentLocation.getZ();
+            
+            // 检查玩家是否在活动范围内
+            if (x < minX || x > maxX || z < minZ || z > maxZ) {
+                // 检查是否有上一个位置记录
+                if (lastLocation.containsKey(player)) {
+                    Location lastLoc = lastLocation.get(player);
+                    // 确保上一个位置在活动范围内
+                    double lastX = lastLoc.getX();
+                    double lastZ = lastLoc.getZ();
+                    if (lastX >= minX && lastX <= maxX && lastZ >= minZ && lastZ <= maxZ) {
+                        player.teleport(lastLoc);
+                        player.sendMessage(ChatColor.RED + "你不允许在这个范围之外");
+                    } else {
+                        // 如果上一个位置也不在范围内，则拉回出生点
+                        if (config.contains("spawn.world")) {
+                            String worldName = config.getString("spawn.world");
+                            double spawnX = config.getDouble("spawn.x");
+                            double spawnY = config.getDouble("spawn.y");
+                            double spawnZ = config.getDouble("spawn.z");
+                            float yaw = (float) config.getDouble("spawn.yaw");
+                            float pitch = (float) config.getDouble("spawn.pitch");
+                            
+                            Location spawnLocation = new Location(getServer().getWorld(worldName), spawnX, spawnY, spawnZ, yaw, pitch);
+                            player.teleport(spawnLocation);
+                            player.sendMessage(ChatColor.RED + "你不允许在这个范围之外");
+                        }
+                    }
+                } else {
+                    // 没有上一个位置记录，拉回出生点
+                    if (config.contains("spawn.world")) {
+                        String worldName = config.getString("spawn.world");
+                        double spawnX = config.getDouble("spawn.x");
+                        double spawnY = config.getDouble("spawn.y");
+                        double spawnZ = config.getDouble("spawn.z");
+                        float yaw = (float) config.getDouble("spawn.yaw");
+                        float pitch = (float) config.getDouble("spawn.pitch");
+                        
+                        Location spawnLocation = new Location(getServer().getWorld(worldName), spawnX, spawnY, spawnZ, yaw, pitch);
+                        player.teleport(spawnLocation);
+                        player.sendMessage(ChatColor.RED + "你不允许在这个范围之外");
+                    }
+                }
+            } else {
+                // 玩家在活动范围内，更新上一个位置
+                lastLocation.put(player, currentLocation);
+            }
+        }
+        // 如果活动范围未设置（都为0），则不限制玩家活动
     }
     
     // 切换玩家可见性
