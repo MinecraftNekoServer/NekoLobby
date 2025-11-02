@@ -485,14 +485,24 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         }
     }
 
-    @EventHandler
-    public void onPlayerDropItem(PlayerDropItemEvent e) {
-        e.setCancelled(true);
-    }
-
-    @EventHandler
-    public void onInventoryClick(InventoryClickEvent e) {
-        e.setCancelled(true);
+    @EventHandler
+    public void onPlayerDropItem(PlayerDropItemEvent e) {
+        Player player = e.getPlayer();
+        // 如果玩家是创造模式，则允许丢弃物品
+        if (player.getGameMode().name().equals("CREATIVE")) {
+            return;
+        }
+        e.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onInventoryClick(InventoryClickEvent e) {
+        Player player = (Player) e.getWhoClicked();
+        // 如果玩家是创造模式，则允许移动物品
+        if (player.getGameMode().name().equals("CREATIVE")) {
+            return;
+        }
+        e.setCancelled(true);
     }
 
     private void lockTimeToDay() {
