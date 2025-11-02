@@ -32,74 +32,41 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerExpChangeEvent;
 import org.bukkit.event.player.PlayerLevelChangeEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
-
-import java.util.Collections;
-
-import java.util.HashMap;
-
-import java.util.Map;
-
-import java.util.HashSet;
-
-import java.util.Set;
-
 import org.bukkit.Bukkit;
-
 import org.bukkit.inventory.Inventory;
-
-import java.util.ArrayList;
-
-import java.util.List;
-
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 import java.sql.Connection;
-
 import java.sql.DriverManager;
-
 import java.sql.PreparedStatement;
-
 import java.sql.ResultSet;
-
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class NekoLobby extends JavaPlugin implements Listener {
     // 存储玩家双击空格时间的Map
-
     private Map<Player, Long> lastSpacePress = new HashMap<>();
-
     // 存储隐藏玩家的集合
-
     private Set<Player> hiddenPlayers = new HashSet<>();
-
     // 存储玩家上一个位置的Map
-
     private Map<Player, Location> lastLocation = new HashMap<>();
-
     // 存储玩家隐身功能冷却时间的Map
-
     private Map<Player, Long> invisibilityCooldown = new HashMap<>();
-
     // 存储玩家加入时间的Map
-
     private Map<Player, Long> playerJoinTime = new HashMap<>();
-
     // 存储玩家总游戏时间的Map
-
     private Map<Player, Long> playerTotalPlayTime = new HashMap<>();
-
     // 数据库连接
-
     private Connection authmeConnection;
-
     private Connection levelConnection;
-
     private Connection bedwarsConnection;
-
     private Connection thepitConnection;
 
-
-
     @Override
-
     public void onEnable() {
         getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby] 插件已启动!");
         getServer().getPluginManager().registerEvents(this, this);
@@ -133,7 +100,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             String host = config.getString("database.host", "localhost");
             int port = config.getInt("database.port", 3306);
             String username = config.getString("database.username", "root");
-            String password = config.getString("database.password", "password");
+            String password = config.getString("database.password", "wcjs123");
             
             // 初始化Authme数据库连接（硬编码数据库名）
             String authmeUrl = "jdbc:mysql://" + host + ":" + port + "/authme" + 
@@ -180,203 +147,104 @@ public final class NekoLobby extends JavaPlugin implements Listener {
                 thepitConnection.close();
             }
             getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby] 数据库连接已关闭!");
-
         } catch (SQLException e) {
-
             getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 关闭数据库连接时出错: " + e.getMessage());
-
             e.printStackTrace();
-
         }
-
     }
 
-    
-
     /**
-
      * 从Authme表获取用户基本信息
-
      */
-
     private Map<String, Object> getPlayerAuthInfo(String playerName) {
-
         Map<String, Object> authInfo = new HashMap<>();
-
         if (authmeConnection == null) return authInfo;
-
         
-
         try {
-
             // 使用大小写不敏感的查询
-
             String query = "SELECT username, lastlogin, regdate, email FROM authme WHERE LOWER(username) = LOWER(?)";
-
             PreparedStatement stmt = authmeConnection.prepareStatement(query);
-
             stmt.setString(1, playerName);
-
             ResultSet rs = stmt.executeQuery();
-
             
-
             if (rs.next()) {
-
                 authInfo.put("username", rs.getString("username"));
-
                 authInfo.put("lastlogin", rs.getLong("lastlogin"));
-
                 authInfo.put("regdate", rs.getLong("regdate"));
-
                 authInfo.put("email", rs.getString("email"));
-
             }
-
             
-
             rs.close();
-
             stmt.close();
-
         } catch (SQLException e) {
-
             getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 查询Authme数据时出错: " + e.getMessage());
-
         }
-
         
-
         return authInfo;
-
     }
-
     
-
     /**
-
-     * 从player_level表获取等级经验信息
-
+     * 从player_levels表获取等级经验信息
      */
-
     private Map<String, Object> getPlayerLevelInfo(String playerName) {
-
         Map<String, Object> levelInfo = new HashMap<>();
-
         if (levelConnection == null) return levelInfo;
-
         
-
         try {
-
             String query = "SELECT name, level, experience FROM player_levels WHERE name = ?";
-
             PreparedStatement stmt = levelConnection.prepareStatement(query);
-
             stmt.setString(1, playerName);
-
             ResultSet rs = stmt.executeQuery();
-
             
-
             if (rs.next()) {
-
                 levelInfo.put("name", rs.getString("name"));
-
                 levelInfo.put("level", rs.getInt("level"));
-
                 levelInfo.put("experience", rs.getInt("experience"));
-
             }
-
             
-
             rs.close();
-
             stmt.close();
-
         } catch (SQLException e) {
-
             getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 查询等级数据时出错: " + e.getMessage());
-
         }
-
         
-
         return levelInfo;
-
     }
-
     
-
     /**
-
      * 从bw_stats_players表获取Bedwars统计数据
-
      */
-
     private Map<String, Object> getPlayerBedwarsStats(String playerName) {
-
         Map<String, Object> bedwarsStats = new HashMap<>();
-
         if (bedwarsConnection == null) return bedwarsStats;
-
         
-
         try {
-
             String query = "SELECT name, kills, wins, score, loses, deaths FROM bw_stats_players WHERE name = ?";
-
             PreparedStatement stmt = bedwarsConnection.prepareStatement(query);
-
             stmt.setString(1, playerName);
-
             ResultSet rs = stmt.executeQuery();
-
             
-
             if (rs.next()) {
-
                 bedwarsStats.put("name", rs.getString("name"));
-
                 bedwarsStats.put("kills", rs.getInt("kills"));
-
                 bedwarsStats.put("wins", rs.getInt("wins"));
-
                 bedwarsStats.put("score", rs.getInt("score"));
-
                 bedwarsStats.put("loses", rs.getInt("loses"));
-
                 bedwarsStats.put("deaths", rs.getInt("deaths"));
-
             }
-
             
-
             rs.close();
-
             stmt.close();
-
         } catch (SQLException e) {
-
             getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 查询Bedwars数据时出错: " + e.getMessage());
-
         }
-
         
-
         return bedwarsStats;
-
     }
-
     
-
     /**
-
      * 从天坑乱斗数据库获取统计数据
-
      */
-
     private Map<String, Object> getPlayerThypitStats(String playerName) {
         Map<String, Object> thepitStats = new HashMap<>();
         if (thepitConnection == null) return thepitStats;
@@ -428,7 +296,6 @@ public final class NekoLobby extends JavaPlugin implements Listener {
     }
 
     @EventHandler
-
     public void onEntitySpawn(EntitySpawnEvent event) {
         Entity entity = event.getEntity();
         if (entity.getType() == EntityType.PLAYER || entity instanceof Item) return;
@@ -530,7 +397,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         compass.setItemMeta(cMeta);
         inv.setItem(0, compass);
 
-        // 玩家头颅（兼容不同版本）
+        // 玩家头颅（兼容 1.12）
         Material skullMat = Material.matchMaterial("SKULL_ITEM");
         if (skullMat != null) {
             ItemStack head = new ItemStack(skullMat, 1, (short) 3);
@@ -554,13 +421,6 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         }
 
         event.setJoinMessage(null);
-        
-        // 记录玩家加入时间
-        playerJoinTime.put(player, System.currentTimeMillis());
-        // 初始化玩家总游戏时间（如果之前没有记录）
-        if (!playerTotalPlayTime.containsKey(player)) {
-            playerTotalPlayTime.put(player, 0L);
-        }
     }
 
     @EventHandler
@@ -589,131 +449,69 @@ public final class NekoLobby extends JavaPlugin implements Listener {
     }
 
     @EventHandler
-
     public void onPlayerInteract(PlayerInteractEvent e) {
-
         Player player = e.getPlayer();
-
         if (!player.hasPermission("nekospawn.build")) {
-
-            // 只取消与方块相关的交互，避免影响物品使用
-
+            // 只处理与方块相关的交互，避免影响物品使用
             if (e.getClickedBlock() != null) {
-
                 e.setCancelled(true);
-
             }
-
         }
-
     }
 
     @EventHandler
-
     public void onPlayerUseItems(PlayerInteractEvent e) {
-
         Player p = e.getPlayer();
-
         ItemStack item = e.getItem();
-
         
-
         // 处理所有右键点击事件（包括对空气点击）
-
         if (e.getAction().name().contains("RIGHT")) {
-
             // 检查是否为空气点击，如果是则获取手中物品
-
             if (item == null) {
-
                 // 获取玩家当前选中的物品
-
                 item = p.getInventory().getItemInHand();
-
                 // 如果仍然为空则返回
-
                 if (item == null) return;
-
             }
-
-
 
             if (item.getType() == Material.COMPASS && p.getInventory().getHeldItemSlot() == 0) {
-
                 // 让客户端解析指令而不是服务端执行
-
                 p.chat("/menu");
-
                 e.setCancelled(true);
-
                 return;
-
             }
-
-
 
             Material skull = Material.matchMaterial("SKULL_ITEM");
-
             // 允许对着空气右键使用个人档案
-
             if (skull != null && item.getType() == skull && item.getDurability() == 3 && p.getInventory().getHeldItemSlot() == 1) {
-
                 openPlayerProfileGUI(p);
-
                 e.setCancelled(true);
-
                 return;
-
             }
-
             
-
             // 处理隐身功能染料
-
             Material dyeMat = Material.matchMaterial("INK_SACK");
-
             if (dyeMat != null && item.getType() == dyeMat && 
-
                 (item.getDurability() == 10 || item.getDurability() == 8) && 
-
                 p.getInventory().getHeldItemSlot() == 7) {
-
                 
-
                 // 检查冷却时间，防止快速连续触发
-
                 long currentTime = System.currentTimeMillis();
-
                 Long lastUse = invisibilityCooldown.get(p);
-
                 if (lastUse != null && currentTime - lastUse < 500) { // 500毫秒冷却
-
                     // 在冷却期间，直接取消事件
-
                     e.setCancelled(true);
-
                     return;
-
                 }
-
                 
-
                 // 移除权限检查，所有人都可以使用
-
                 togglePlayerVisibility(p, item);
-
                 e.setCancelled(true);
-
                 
-
                 // 设置冷却时间
-
                 invisibilityCooldown.put(p, currentTime);
-
             }
-
         }
-
     }
 
     private void openPlayerProfileGUI(Player p) {
@@ -753,6 +551,17 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         double kdRatio = deaths > 0 ? (double) kills / deaths : kills;
         // 计算Bedwars W/L比率
         double wlRatio = loses > 0 ? (double) wins / loses : wins;
+        
+        // 计算玩家游戏时间
+        long totalPlayTime = playerTotalPlayTime.getOrDefault(p, 0L);
+        Long joinTime = playerJoinTime.get(p);
+        if (joinTime != null) {
+            // 加上当前会话的时间
+            totalPlayTime += System.currentTimeMillis() - joinTime;
+        }
+        
+        long totalHours = totalPlayTime / (1000 * 60 * 60);
+        long totalMinutes = (totalPlayTime / (1000 * 60)) % 60;
         
         // 玩家头像
         Material playerHeadMat = Material.matchMaterial("SKULL_ITEM");
@@ -889,6 +698,155 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         p.openInventory(profileGUI);
     }
 
+    private void togglePlayerVisibility(Player player, ItemStack dye) {
+        // 切换玩家隐藏状态
+        if (hiddenPlayers.contains(player)) {
+            // 显示所有玩家
+            for (Player onlinePlayer : getServer().getOnlinePlayers()) {
+                player.showPlayer(onlinePlayer);
+            }
+            hiddenPlayers.remove(player);
+            
+            // 将染料变为黄绿色
+            dye.setDurability((short) 10);
+            ItemMeta meta = dye.getItemMeta();
+            meta.setDisplayName(ChatColor.GREEN + "隐身开关");
+            meta.setLore(Collections.singletonList(ChatColor.GRAY + "右键切换玩家显示/隐藏"));
+            dye.setItemMeta(meta);
+            
+            player.sendMessage(ChatColor.GREEN + "玩家已显示");
+        } else {
+            // 隐藏所有玩家
+            for (Player onlinePlayer : getServer().getOnlinePlayers()) {
+                if (!onlinePlayer.equals(player)) { // 不隐藏自己
+                    player.hidePlayer(onlinePlayer);
+                }
+            }
+            hiddenPlayers.add(player);
+            
+            // 将染料变为灰色
+            dye.setDurability((short) 8);
+            ItemMeta meta = dye.getItemMeta();
+            meta.setDisplayName(ChatColor.GRAY + "隐身开关");
+            meta.setLore(Collections.singletonList(ChatColor.GRAY + "右键切换玩家显示/隐藏"));
+            dye.setItemMeta(meta);
+            
+            player.sendMessage(ChatColor.GRAY + "玩家已隐藏");
+        }
+        
+        // 更新玩家手中的物品
+        player.getInventory().setItem(7, dye);
+    }
+
+    @EventHandler
+    public void onInventoryClick(InventoryClickEvent e) {
+        Player player = (Player) e.getWhoClicked();
+        // 如果玩家是创造模式，则允许移动物品
+        if (player.getGameMode().name().equals("CREATIVE")) {
+            return;
+        }
+        // 检查是否是个人档案GUI，如果是则允许交互
+        if (e.getView().getTitle().equals(ChatColor.BLUE + "个人档案")) {
+            // 处理个人档案GUI中的交互
+            handleProfileGUIInteraction(e);
+            return;
+        }
+        e.setCancelled(true);
+    }
+    
+    private void handleProfileGUIInteraction(InventoryClickEvent e) {
+        e.setCancelled(true); // 防止玩家拿取物品
+        Player player = (Player) e.getWhoClicked();
+        ItemStack clickedItem = e.getCurrentItem();
+        
+        // 获取玩家数据用于显示
+        String playerName = player.getName();
+        Map<String, Object> authInfo = getPlayerAuthInfo(playerName);
+        long regDate = (Long) authInfo.getOrDefault("regdate", 0L);
+        String regDateStr = regDate > 0 ? new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(regDate)) : "未知";
+        String email = (String) authInfo.getOrDefault("email", "未设置");
+        
+        // 获取等级信息
+        Map<String, Object> levelInfo = getPlayerLevelInfo(playerName);
+        int level = (Integer) levelInfo.getOrDefault("level", 1);
+        int experience = (Integer) levelInfo.getOrDefault("experience", 0);
+        
+        // 获取Bedwars统计信息
+        Map<String, Object> bedwarsStats = getPlayerBedwarsStats(playerName);
+        int kills = (Integer) bedwarsStats.getOrDefault("kills", 0);
+        int wins = (Integer) bedwarsStats.getOrDefault("wins", 0);
+        int score = (Integer) bedwarsStats.getOrDefault("score", 0);
+        int loses = (Integer) bedwarsStats.getOrDefault("loses", 0);
+        int deaths = (Integer) bedwarsStats.getOrDefault("deaths", 0);
+        
+        // 如果点击的是空槽位或装饰性物品，则不处理
+        Material glassPaneMat = Material.matchMaterial("STAINED_GLASS_PANE");
+        boolean isGlassPane = glassPaneMat != null ? 
+            clickedItem.getType() == glassPaneMat : 
+            clickedItem.getType() == Material.GRAY_STAINED_GLASS_PANE || clickedItem.getType() == Material.BLUE_STAINED_GLASS_PANE;
+            
+        if (clickedItem == null || clickedItem.getType() == Material.AIR || isGlassPane) {
+            return;
+        }
+        
+        // 如果点击的是玩家头像，则显示更多详细信息
+        Material skullMat = Material.matchMaterial("SKULL_ITEM");
+        if ((skullMat != null && clickedItem.getType() == skullMat) || clickedItem.getType() == Material.PLAYER_HEAD) {
+            player.sendMessage(ChatColor.GREEN + "玩家详细信息:");
+            player.sendMessage(ChatColor.GRAY + "  名称: " + ChatColor.YELLOW + player.getName());
+            player.sendMessage(ChatColor.GRAY + "  UUID: " + ChatColor.YELLOW + player.getUniqueId());
+            player.sendMessage(ChatColor.GRAY + "  等级: " + ChatColor.YELLOW + level);
+            return;
+        }
+        
+        // 如果点击的是统计信息书本
+        Material bookMat = Material.matchMaterial("BOOK");
+        if ((bookMat != null && clickedItem.getType() == bookMat) || clickedItem.getType() == Material.WRITTEN_BOOK) {
+            player.sendMessage(ChatColor.GREEN + "统计信息:");
+            player.sendMessage(ChatColor.GRAY + "  注册时间: " + ChatColor.YELLOW + regDateStr);
+            player.sendMessage(ChatColor.GRAY + "  邮箱: " + ChatColor.YELLOW + email);
+            return;
+        }
+        
+        // 如果点击的是等级信息
+        Material expBottleMat = Material.matchMaterial("EXP_BOTTLE");
+        if ((expBottleMat != null && clickedItem.getType() == expBottleMat) || clickedItem.getType() == Material.EXPERIENCE_BOTTLE) {
+            player.sendMessage(ChatColor.AQUA + "等级信息:");
+            player.sendMessage(ChatColor.GRAY + "  当前等级: " + ChatColor.GREEN + level);
+            player.sendMessage(ChatColor.GRAY + "  经验值: " + ChatColor.GREEN + experience);
+            return;
+        }
+        
+        // 如果点击的是Bedwars统计
+        Material bedMat = Material.matchMaterial("BED");
+        if ((bedMat != null && clickedItem.getType() == bedMat) || clickedItem.getType() == Material.RED_BED) {
+            player.sendMessage(ChatColor.RED + "Bedwars统计:");
+            player.sendMessage(ChatColor.GRAY + "  击杀数: " + ChatColor.GREEN + kills);
+            player.sendMessage(ChatColor.GRAY + "  死亡数: " + ChatColor.GREEN + deaths);
+            player.sendMessage(ChatColor.GRAY + "  胜利数: " + ChatColor.GREEN + wins);
+            player.sendMessage(ChatColor.GRAY + "  失败数: " + ChatColor.GREEN + loses);
+            player.sendMessage(ChatColor.GRAY + "  总分数: " + ChatColor.GREEN + score);
+            return;
+        }
+        
+        // 如果点击的是天坑乱斗统计
+        Material diamondSwordMat = Material.matchMaterial("DIAMOND_SWORD");
+        if ((diamondSwordMat != null && clickedItem.getType() == diamondSwordMat) || clickedItem.getType() == Material.DIAMOND_SWORD) {
+            Map<String, Object> thepitStats = getPlayerThypitStats(playerName);
+            int pitKills = (Integer) thepitStats.getOrDefault("kills", 0);
+            int pitDeaths = (Integer) thepitStats.getOrDefault("deaths", 0);
+            int pitAssists = (Integer) thepitStats.getOrDefault("assists", 0);
+            int pitLevel = (Integer) thepitStats.getOrDefault("level", 1);
+            
+            player.sendMessage(ChatColor.GOLD + "天坑乱斗统计:");
+            player.sendMessage(ChatColor.GRAY + "  等级: " + ChatColor.GREEN + pitLevel);
+            player.sendMessage(ChatColor.GRAY + "  击杀数: " + ChatColor.GREEN + pitKills);
+            player.sendMessage(ChatColor.GRAY + "  死亡数: " + ChatColor.GREEN + pitDeaths);
+            player.sendMessage(ChatColor.GRAY + "  助攻数: " + ChatColor.GREEN + pitAssists);
+            return;
+        }
+    }
+
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent e) {
         Player player = e.getPlayer();
@@ -897,16 +855,6 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         hiddenPlayers.remove(player);
         lastLocation.remove(player); // 清除玩家上一个位置数据
         invisibilityCooldown.remove(player); // 清除冷却时间数据
-        
-        // 更新玩家总游戏时间
-        Long joinTime = playerJoinTime.get(player);
-        if (joinTime != null) {
-            long playTime = System.currentTimeMillis() - joinTime;
-            long totalPlayTime = playerTotalPlayTime.getOrDefault(player, 0L) + playTime;
-            playerTotalPlayTime.put(player, totalPlayTime);
-            playerJoinTime.remove(player); // 清除加入时间数据
-        }
-        
         e.setQuitMessage(null);
     }
     
@@ -1001,47 +949,6 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         // 如果活动范围未设置（都为0），则不限制玩家活动
     }
     
-    // 切换玩家可见性
-    private void togglePlayerVisibility(Player player, ItemStack dye) {
-        // 切换玩家隐藏状态
-        if (hiddenPlayers.contains(player)) {
-            // 显示所有玩家
-            for (Player onlinePlayer : getServer().getOnlinePlayers()) {
-                player.showPlayer(onlinePlayer);
-            }
-            hiddenPlayers.remove(player);
-            
-            // 将染料变为黄绿色
-            dye.setDurability((short) 10);
-            ItemMeta meta = dye.getItemMeta();
-            meta.setDisplayName(ChatColor.GREEN + "隐身开关");
-            meta.setLore(Collections.singletonList(ChatColor.GRAY + "右键切换玩家显示/隐藏"));
-            dye.setItemMeta(meta);
-            
-            player.sendMessage(ChatColor.GREEN + "玩家已显示");
-        } else {
-            // 隐藏所有玩家
-            for (Player onlinePlayer : getServer().getOnlinePlayers()) {
-                if (!onlinePlayer.equals(player)) { // 不隐藏自己
-                    player.hidePlayer(onlinePlayer);
-                }
-            }
-            hiddenPlayers.add(player);
-            
-            // 将染料变为灰色
-            dye.setDurability((short) 8);
-            ItemMeta meta = dye.getItemMeta();
-            meta.setDisplayName(ChatColor.GRAY + "隐身开关");
-            meta.setLore(Collections.singletonList(ChatColor.GRAY + "右键切换玩家显示/隐藏"));
-            dye.setItemMeta(meta);
-            
-            player.sendMessage(ChatColor.GRAY + "玩家已隐藏");
-        }
-        
-        // 更新玩家手中的物品
-        player.getInventory().setItem(7, dye);
-    }
-    
     // 移除摔落伤害
     @EventHandler
     public void onEntityDamage(EntityDamageEvent event) {
@@ -1086,7 +993,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             return;
         }
         
-        // 只在玩家按住空格键时触发（潜行）
+        // 只玩家按住空格键时触发（潜行）
         if (!event.isSneaking()) {
             return;
         }
@@ -1120,117 +1027,13 @@ public final class NekoLobby extends JavaPlugin implements Listener {
     }
 
     @EventHandler
-
     public void onPlayerDropItem(PlayerDropItemEvent e) {
-
         Player player = e.getPlayer();
-
         // 如果玩家是创造模式，则允许丢弃物品
-
         if (player.getGameMode().name().equals("CREATIVE")) {
-
             return;
-
         }
-
         e.setCancelled(true);
-
-    }
-
-
-
-    @EventHandler
-
-    public void onInventoryClick(InventoryClickEvent e) {
-
-        Player player = (Player) e.getWhoClicked();
-
-        // 如果玩家是创造模式，则允许移动物品
-
-        if (player.getGameMode().name().equals("CREATIVE")) {
-
-            return;
-
-        }
-
-        // 检查是否是个人档案GUI，如果是则允许交互
-
-        if (e.getView().getTitle().equals(ChatColor.BLUE + "个人档案")) {
-
-            // 处理个人档案GUI中的交互
-
-            handleProfileGUIInteraction(e);
-
-            return;
-
-        }
-
-        e.setCancelled(true);
-
-    }
-
-
-
-    private void handleProfileGUIInteraction(InventoryClickEvent e) {
-        e.setCancelled(true); // 防止玩家拿取物品
-        Player player = (Player) e.getWhoClicked();
-        ItemStack clickedItem = e.getCurrentItem();
-        
-        // 获取玩家数据用于显示
-        String playerName = player.getName();
-        Map<String, Object> authInfo = getPlayerAuthInfo(playerName);
-        long regDate = (Long) authInfo.getOrDefault("regdate", 0L);
-        String regDateStr = regDate > 0 ? new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(regDate)) : "未知";
-        String email = (String) authInfo.getOrDefault("email", "未设置");
-        
-        // 获取等级信息
-        Map<String, Object> levelInfo = getPlayerLevelInfo(playerName);
-        int level = (Integer) levelInfo.getOrDefault("level", 1);
-        int experience = (Integer) levelInfo.getOrDefault("experience", 0);
-        
-        // 如果点击的是空槽位或装饰性物品，则不处理
-        Material glassPaneMat = Material.matchMaterial("STAINED_GLASS_PANE");
-        boolean isGlassPane = glassPaneMat != null ? 
-            clickedItem.getType() == glassPaneMat : 
-            clickedItem.getType() == Material.GRAY_STAINED_GLASS_PANE;
-            
-        if (clickedItem == null || clickedItem.getType() == Material.AIR || isGlassPane) {
-            return;
-        }
-        
-        // 如果点击的是玩家头像，则显示更多详细信息
-        Material skullMat = Material.matchMaterial("SKULL_ITEM");
-        if ((skullMat != null && clickedItem.getType() == skullMat) || clickedItem.getType() == Material.PLAYER_HEAD) {
-            player.sendMessage(ChatColor.GREEN + "玩家详细信息:");
-            player.sendMessage(ChatColor.GRAY + "  名称: " + ChatColor.YELLOW + player.getName());
-            player.sendMessage(ChatColor.GRAY + "  UUID: " + ChatColor.YELLOW + player.getUniqueId());
-            player.sendMessage(ChatColor.GRAY + "  等级: " + ChatColor.YELLOW + level);
-            
-            // 不关闭GUI，而是给玩家一个确认选项
-            return;
-        }
-        
-        // 如果点击的是统计信息书本
-        Material bookMat = Material.matchMaterial("BOOK");
-        if ((bookMat != null && clickedItem.getType() == bookMat) || clickedItem.getType() == Material.WRITTEN_BOOK) {
-            player.sendMessage(ChatColor.GREEN + "统计信息:");
-            player.sendMessage(ChatColor.GRAY + "  注册时间: " + ChatColor.YELLOW + regDateStr);
-            player.sendMessage(ChatColor.GRAY + "  邮箱: " + ChatColor.YELLOW + email);
-            
-            // 不关闭GUI，而是给玩家一个确认选项
-            return;
-        }
-        
-        // 如果点击的是等级信息
-        Material expBottleMat = Material.matchMaterial("EXP_BOTTLE");
-        if ((expBottleMat != null && clickedItem.getType() == expBottleMat) || clickedItem.getType() == Material.EXPERIENCE_BOTTLE) {
-            player.sendMessage(ChatColor.AQUA + "等级信息:");
-            player.sendMessage(ChatColor.GRAY + "  当前等级: " + ChatColor.GREEN + level);
-            player.sendMessage(ChatColor.GRAY + "  经验值: " + ChatColor.GREEN + experience);
-            
-            // 不关闭GUI，而是给玩家一个确认选项
-            return;
-        }
     }
 
     private void lockTimeToDay() {
