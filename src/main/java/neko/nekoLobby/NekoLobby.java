@@ -39,12 +39,14 @@ import java.util.HashSet;
 import java.util.Set;
 
 public final class NekoLobby extends JavaPlugin implements Listener {
-    // 存储玩家双击空格时间的Map
-    private Map<Player, Long> lastSpacePress = new HashMap<>();
-    // 存储隐藏玩家的集合
-    private Set<Player> hiddenPlayers = new HashSet<>();
-    // 存储玩家上一个位置的Map
-    private Map<Player, Location> lastLocation = new HashMap<>();
+    // 存储玩家双击空格时间的Map
+    private Map<Player, Long> lastSpacePress = new HashMap<>();
+    // 存储隐藏玩家的集合
+    private Set<Player> hiddenPlayers = new HashSet<>();
+    // 存储玩家上一个位置的Map
+    private Map<Player, Location> lastLocation = new HashMap<>();
+    // 存储玩家隐身功能冷却时间的Map
+    private Map<Player, Long> invisibilityCooldown = new HashMap<>();
 
     @Override
     public void onEnable() {
@@ -212,54 +214,70 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         }
     }
 
-    @EventHandler
-    public void onPlayerInteract(PlayerInteractEvent e) {
-        Player player = e.getPlayer();
-        if (!player.hasPermission("nekospawn.build")) {
-            e.setCancelled(true);
-        }
+    @EventHandler
+    public void onPlayerInteract(PlayerInteractEvent e) {
+        Player player = e.getPlayer();
+        if (!player.hasPermission("nekospawn.build")) {
+            // 只取消与方块相关的交互，避免影响物品使用
+            if (e.getClickedBlock() != null) {
+                e.setCancelled(true);
+            }
+        }
     }
 
-    @EventHandler
-    public void onPlayerUseItems(PlayerInteractEvent e) {
-        Player p = e.getPlayer();
-        ItemStack item = e.getItem();
-        
-        // 处理所有右键点击事件（包括对空气点击）
-        if (e.getAction().name().contains("RIGHT")) {
-            // 检查是否为空气点击，如果是则获取手中物品
-            if (item == null) {
-                // 获取玩家当前选中的物品
-                item = p.getInventory().getItemInHand();
-                // 如果仍然为空则返回
-                if (item == null) return;
-            }
-
-            if (item.getType() == Material.COMPASS && p.getInventory().getHeldItemSlot() == 0) {
-                // 让客户端解析指令而不是服务端执行
-                p.chat("/menu");
-                e.setCancelled(true);
-                return;
-            }
-
-            Material skull = Material.matchMaterial("SKULL_ITEM");
-            // 允许对着空气右键使用个人档案
-            if (skull != null && item.getType() == skull && item.getDurability() == 3 && p.getInventory().getHeldItemSlot() == 1) {
-                openPlayerProfileGUI(p);
-                e.setCancelled(true);
-                return;
-            }
-            
-            // 处理隐身功能染料
-            Material dyeMat = Material.matchMaterial("INK_SACK");
-            if (dyeMat != null && item.getType() == dyeMat && 
-                (item.getDurability() == 10 || item.getDurability() == 8) && 
-                p.getInventory().getHeldItemSlot() == 7) {
-                // 移除权限检查，所有人都可以使用
-                togglePlayerVisibility(p, item);
-                e.setCancelled(true);
-            }
-        }
+    @EventHandler
+    public void onPlayerUseItems(PlayerInteractEvent e) {
+        Player p = e.getPlayer();
+        ItemStack item = e.getItem();
+        
+        // 处理所有右键点击事件（包括对空气点击）
+        if (e.getAction().name().contains("RIGHT")) {
+            // 检查是否为空气点击，如果是则获取手中物品
+            if (item == null) {
+                // 获取玩家当前选中的物品
+                item = p.getInventory().getItemInHand();
+                // 如果仍然为空则返回
+                if (item == null) return;
+            }
+
+            if (item.getType() == Material.COMPASS && p.getInventory().getHeldItemSlot() == 0) {
+                // 让客户端解析指令而不是服务端执行
+                p.chat("/menu");
+                e.setCancelled(true);
+                return;
+            }
+
+            Material skull = Material.matchMaterial("SKULL_ITEM");
+            // 允许对着空气右键使用个人档案
+            if (skull != null && item.getType() == skull && item.getDurability() == 3 && p.getInventory().getHeldItemSlot() == 1) {
+                openPlayerProfileGUI(p);
+                e.setCancelled(true);
+                return;
+            }
+            
+            // 处理隐身功能染料
+            Material dyeMat = Material.matchMaterial("INK_SACK");
+            if (dyeMat != null && item.getType() == dyeMat && 
+                (item.getDurability() == 10 || item.getDurability() == 8) && 
+                p.getInventory().getHeldItemSlot() == 7) {
+                
+                // 检查冷却时间，防止快速连续触发
+                long currentTime = System.currentTimeMillis();
+                Long lastUse = invisibilityCooldown.get(p);
+                if (lastUse != null && currentTime - lastUse < 500) { // 500毫秒冷却
+                    // 在冷却期间，直接取消事件
+                    e.setCancelled(true);
+                    return;
+                }
+                
+                // 移除权限检查，所有人都可以使用
+                togglePlayerVisibility(p, item);
+                e.setCancelled(true);
+                
+                // 设置冷却时间
+                invisibilityCooldown.put(p, currentTime);
+            }
+        }
     }
 
     private void openPlayerProfileGUI(Player p) {
@@ -273,6 +291,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         lastSpacePress.remove(player);
         hiddenPlayers.remove(player);
         lastLocation.remove(player); // 清除玩家上一个位置数据
+        invisibilityCooldown.remove(player); // 清除冷却时间数据
         e.setQuitMessage(null);
     }
     
