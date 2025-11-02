@@ -269,7 +269,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
         try {
 
-            String query = "SELECT name, level, experience FROM player_level WHERE name = ?";
+            String query = "SELECT name, level, experience FROM player_levels WHERE name = ?";
 
             PreparedStatement stmt = levelConnection.prepareStatement(query);
 
@@ -325,7 +325,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
         try {
 
-            String query = "SELECT name, kills, wins, scord, loses, deaths FROM bw_stats_players WHERE name = ?";
+            String query = "SELECT name, kills, wins, score, loses, deaths FROM bw_stats_players WHERE name = ?";
 
             PreparedStatement stmt = bedwarsConnection.prepareStatement(query);
 
@@ -343,7 +343,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
                 bedwarsStats.put("wins", rs.getInt("wins"));
 
-                bedwarsStats.put("scord", rs.getInt("scord"));
+                bedwarsStats.put("score", rs.getInt("score"));
 
                 bedwarsStats.put("loses", rs.getInt("loses"));
 
@@ -729,25 +729,14 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         Map<String, Object> bedwarsStats = getPlayerBedwarsStats(playerName);
         Map<String, Object> thepitStats = getPlayerThypitStats(playerName);
         
-        // 计算玩家游戏时间
-        long totalPlayTime = playerTotalPlayTime.getOrDefault(p, 0L);
-        Long joinTime = playerJoinTime.get(p);
-        if (joinTime != null) {
-            // 加上当前会话的时间
-            totalPlayTime += System.currentTimeMillis() - joinTime;
-        }
-        
-        long totalHours = totalPlayTime / (1000 * 60 * 60);
-        long totalMinutes = (totalPlayTime / (1000 * 60)) % 60;
-        
         // 获取Authme信息
         String email = (String) authInfo.getOrDefault("email", "未设置");
         long lastLogin = (Long) authInfo.getOrDefault("lastlogin", 0L);
         long regDate = (Long) authInfo.getOrDefault("regdate", 0L);
         
         // 格式化时间
-        String lastLoginStr = lastLogin > 0 ? new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(lastLogin * 1000)) : "未知";
-        String regDateStr = regDate > 0 ? new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(regDate * 1000)) : "未知";
+        String lastLoginStr = lastLogin > 0 ? new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(lastLogin)) : "未知";
+        String regDateStr = regDate > 0 ? new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(regDate)) : "未知";
         
         // 获取等级信息
         int level = (Integer) levelInfo.getOrDefault("level", 1);
@@ -756,7 +745,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         // 获取Bedwars统计信息
         int kills = (Integer) bedwarsStats.getOrDefault("kills", 0);
         int wins = (Integer) bedwarsStats.getOrDefault("wins", 0);
-        int score = (Integer) bedwarsStats.getOrDefault("scord", 0);
+        int score = (Integer) bedwarsStats.getOrDefault("score", 0);
         int loses = (Integer) bedwarsStats.getOrDefault("loses", 0);
         int deaths = (Integer) bedwarsStats.getOrDefault("deaths", 0);
         
@@ -783,7 +772,6 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         // 添加玩家信息到Lore
         List<String> headLore = new ArrayList<>();
         headLore.add(ChatColor.GRAY + "等级: " + ChatColor.GREEN + level);
-        headLore.add(ChatColor.GRAY + "在线时间: " + ChatColor.GREEN + totalHours + "小时 " + totalMinutes + "分钟");
         headLore.add(ChatColor.GRAY + "最后登录: " + ChatColor.GREEN + lastLoginStr);
         headLore.add("");
         headLore.add(ChatColor.GOLD + "▶ 点击查看详细信息");
@@ -823,15 +811,15 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         profileGUI.setItem(13, playerHead);
         
         // 玩家统计信息
-        ItemStack statsItem = new ItemStack(Material.BOOK);
+        Material bookMat = Material.matchMaterial("BOOK");
+        ItemStack statsItem = bookMat != null ? 
+            new ItemStack(bookMat) : 
+            new ItemStack(Material.WRITTEN_BOOK);
         ItemMeta statsMeta = statsItem.getItemMeta();
         statsMeta.setDisplayName(ChatColor.GREEN + "统计信息");
         List<String> statsLore = new ArrayList<>();
         statsLore.add(ChatColor.GRAY + "注册时间: " + ChatColor.YELLOW + regDateStr);
         statsLore.add(ChatColor.GRAY + "邮箱: " + ChatColor.YELLOW + email);
-        statsLore.add(ChatColor.GRAY + "游戏时间: " + ChatColor.YELLOW + totalHours + "小时 " + totalMinutes + "分钟");
-        statsLore.add("");
-        statsLore.add(ChatColor.GOLD + "总计游戏时间: " + ChatColor.YELLOW + totalHours + "小时");
         statsMeta.setLore(statsLore);
         statsItem.setItemMeta(statsMeta);
         profileGUI.setItem(31, statsItem);
@@ -1188,6 +1176,18 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         Player player = (Player) e.getWhoClicked();
         ItemStack clickedItem = e.getCurrentItem();
         
+        // 获取玩家数据用于显示
+        String playerName = player.getName();
+        Map<String, Object> authInfo = getPlayerAuthInfo(playerName);
+        long regDate = (Long) authInfo.getOrDefault("regdate", 0L);
+        String regDateStr = regDate > 0 ? new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(regDate)) : "未知";
+        String email = (String) authInfo.getOrDefault("email", "未设置");
+        
+        // 获取等级信息
+        Map<String, Object> levelInfo = getPlayerLevelInfo(playerName);
+        int level = (Integer) levelInfo.getOrDefault("level", 1);
+        int experience = (Integer) levelInfo.getOrDefault("experience", 0);
+        
         // 如果点击的是空槽位或装饰性物品，则不处理
         Material glassPaneMat = Material.matchMaterial("STAINED_GLASS_PANE");
         boolean isGlassPane = glassPaneMat != null ? 
@@ -1201,41 +1201,36 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         // 如果点击的是玩家头像，则显示更多详细信息
         Material skullMat = Material.matchMaterial("SKULL_ITEM");
         if ((skullMat != null && clickedItem.getType() == skullMat) || clickedItem.getType() == Material.PLAYER_HEAD) {
-
             player.sendMessage(ChatColor.GREEN + "玩家详细信息:");
-
             player.sendMessage(ChatColor.GRAY + "  名称: " + ChatColor.YELLOW + player.getName());
-
             player.sendMessage(ChatColor.GRAY + "  UUID: " + ChatColor.YELLOW + player.getUniqueId());
-
-            player.sendMessage(ChatColor.GRAY + "  等级: " + ChatColor.YELLOW + "1");
-
-            player.closeInventory(); // 关闭GUI
-
+            player.sendMessage(ChatColor.GRAY + "  等级: " + ChatColor.YELLOW + level);
+            
+            // 不关闭GUI，而是给玩家一个确认选项
             return;
-
         }
-
         
-
         // 如果点击的是统计信息书本
-
-        if (clickedItem.getType() == Material.BOOK) {
-
+        Material bookMat = Material.matchMaterial("BOOK");
+        if ((bookMat != null && clickedItem.getType() == bookMat) || clickedItem.getType() == Material.WRITTEN_BOOK) {
             player.sendMessage(ChatColor.GREEN + "统计信息:");
-
-            player.sendMessage(ChatColor.GRAY + "  游戏时间: " + ChatColor.YELLOW + "0小时");
-
-            player.sendMessage(ChatColor.GRAY + "  在线时间: " + ChatColor.YELLOW + "0分钟");
-
-            player.sendMessage(ChatColor.GRAY + "  加入时间: " + ChatColor.YELLOW + "今天");
-
-            player.closeInventory(); // 关闭GUI
-
+            player.sendMessage(ChatColor.GRAY + "  注册时间: " + ChatColor.YELLOW + regDateStr);
+            player.sendMessage(ChatColor.GRAY + "  邮箱: " + ChatColor.YELLOW + email);
+            
+            // 不关闭GUI，而是给玩家一个确认选项
             return;
-
         }
-
+        
+        // 如果点击的是等级信息
+        Material expBottleMat = Material.matchMaterial("EXP_BOTTLE");
+        if ((expBottleMat != null && clickedItem.getType() == expBottleMat) || clickedItem.getType() == Material.EXPERIENCE_BOTTLE) {
+            player.sendMessage(ChatColor.AQUA + "等级信息:");
+            player.sendMessage(ChatColor.GRAY + "  当前等级: " + ChatColor.GREEN + level);
+            player.sendMessage(ChatColor.GRAY + "  经验值: " + ChatColor.GREEN + experience);
+            
+            // 不关闭GUI，而是给玩家一个确认选项
+            return;
+        }
     }
 
     private void lockTimeToDay() {
