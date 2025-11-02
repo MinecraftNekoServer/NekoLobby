@@ -710,7 +710,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         }
         
         // 添加装饰点 - 创建更美观的布局
-        int[] decorationSlots = {10, 11, 12, 14, 15, 16, 19, 20, 21, 23, 24, 25, 28, 29, 30, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43};
+        int[] decorationSlots = {10, 11, 12, 14, 15, 16, 19, 20, 21, 23, 24, 25, 28, 29, 30, 32, 33, 34, 37, 38, 40, 42, 43};
         for (int slot : decorationSlots) {
             profileGUI.setItem(slot, whiteGlassPane.clone());
         }
@@ -791,46 +791,6 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         thepitMeta.setLore(thepitLore);
         thepitItem.setItemMeta(thepitMeta);
         profileGUI.setItem(32, thepitItem);
-        
-        // 在线时长信息 - 二次元风格 (第四行左侧)
-        long totalPlayTime = playerTotalPlayTime.getOrDefault(p, 0L);
-        Long joinTime = playerJoinTime.get(p);
-        if (joinTime != null) {
-            // 加上当前会话的时间
-            totalPlayTime += System.currentTimeMillis() - joinTime;
-        }
-        
-        long totalHours = totalPlayTime / (1000 * 60 * 60);
-        long totalMinutes = (totalPlayTime / (1000 * 60)) % 60;
-        
-        Material clockMat = Material.matchMaterial("WATCH");
-        ItemStack timeItem = clockMat != null ? 
-            new ItemStack(clockMat) : 
-            new ItemStack(Material.CLOCK);
-        ItemMeta timeMeta = timeItem.getItemMeta();
-        timeMeta.setDisplayName(ChatColor.AQUA + "⏰ " + ChatColor.BOLD + "在线时长" + ChatColor.AQUA + " ⏰");
-        List<String> timeLore = new ArrayList<>();
-        timeLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "总计时长: " + ChatColor.LIGHT_PURPLE + totalHours + "小时 " + totalMinutes + "分钟" + ChatColor.WHITE + " ✿");
-        timeLore.add("");
-        timeLore.add(ChatColor.LIGHT_PURPLE + "❁ " + ChatColor.ITALIC + "服务器在线时间记录" + ChatColor.LIGHT_PURPLE + " ❁");
-        timeMeta.setLore(timeLore);
-        timeItem.setItemMeta(timeMeta);
-        profileGUI.setItem(39, timeItem);
-        
-        // 登录次数信息 - 二次元风格 (第四行右侧)
-        Material paperMat = Material.matchMaterial("PAPER");
-        ItemStack loginItem = paperMat != null ? 
-            new ItemStack(paperMat) : 
-            new ItemStack(Material.PAPER);
-        ItemMeta loginMeta = loginItem.getItemMeta();
-        loginMeta.setDisplayName(ChatColor.GREEN + "📝 " + ChatColor.BOLD + "登录统计" + ChatColor.GREEN + " 📝");
-        List<String> loginLore = new ArrayList<>();
-        loginLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "登录次数: " + ChatColor.LIGHT_PURPLE + "未知" + ChatColor.WHITE + " ✿");
-        loginLore.add("");
-        loginLore.add(ChatColor.LIGHT_PURPLE + "❁ " + ChatColor.ITALIC + "登录历史统计" + ChatColor.LIGHT_PURPLE + " ❁");
-        loginMeta.setLore(loginLore);
-        loginItem.setItemMeta(loginMeta);
-        profileGUI.setItem(41, loginItem);
         
         // 打开GUI
         p.openInventory(profileGUI);
@@ -1005,37 +965,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             return;
         }
         
-        // 如果点击的是在线时长信息 - 二次元风格
-        Material clockMat = Material.matchMaterial("WATCH");
-        if ((clockMat != null && clickedItem.getType() == clockMat) || clickedItem.getType() == Material.CLOCK) {
-            long totalPlayTime = playerTotalPlayTime.getOrDefault(player, 0L);
-            Long joinTime = playerJoinTime.get(player);
-            if (joinTime != null) {
-                // 加上当前会话的时间
-                totalPlayTime += System.currentTimeMillis() - joinTime;
-            }
-            
-            long totalHours = totalPlayTime / (1000 * 60 * 60);
-            long totalMinutes = (totalPlayTime / (1000 * 60)) % 60;
-            
-            player.sendMessage(ChatColor.AQUA + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
-            player.sendMessage(ChatColor.LIGHT_PURPLE + "                   在线时长");
-            player.sendMessage(ChatColor.AQUA + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
-            player.sendMessage(ChatColor.YELLOW + "  ✿ 总计时长: " + ChatColor.WHITE + totalHours + "小时 " + totalMinutes + "分钟");
-            player.sendMessage(ChatColor.AQUA + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
-            return;
-        }
         
-        // 如果点击的是登录统计信息 - 二次元风格
-        Material paperMat = Material.matchMaterial("PAPER");
-        if ((paperMat != null && clickedItem.getType() == paperMat) || clickedItem.getType() == Material.PAPER) {
-            player.sendMessage(ChatColor.GREEN + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
-            player.sendMessage(ChatColor.LIGHT_PURPLE + "                   登录统计");
-            player.sendMessage(ChatColor.GREEN + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
-            player.sendMessage(ChatColor.YELLOW + "  ✿ 登录次数: " + ChatColor.WHITE + "未知");
-            player.sendMessage(ChatColor.GREEN + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
-            return;
-        }
     }
 
     @EventHandler
