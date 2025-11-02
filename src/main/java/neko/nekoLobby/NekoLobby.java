@@ -47,6 +47,12 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+// LuckPerms API
+import net.luckperms.api.LuckPerms;
+import net.luckperms.api.LuckPermsProvider;
+import net.luckperms.api.model.user.User;
+import net.luckperms.api.model.group.Group;
+
 public final class NekoLobby extends JavaPlugin implements Listener {
     // 存储玩家双击空格时间的Map
     private Map<Player, Long> lastSpacePress = new HashMap<>();
@@ -65,6 +71,8 @@ public final class NekoLobby extends JavaPlugin implements Listener {
     private Connection levelConnection;
     private Connection bedwarsConnection;
     private Connection thepitConnection;
+    // LuckPerms API
+    private LuckPerms luckPerms;
 
     @Override
     public void onEnable() {
@@ -75,6 +83,14 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         
         // 初始化数据库连接
         initializeDatabaseConnections();
+        
+        // 初始化LuckPerms API
+        try {
+            luckPerms = LuckPermsProvider.get();
+            getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby] LuckPerms API 已连接!");
+        } catch (Exception e) {
+            getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 无法连接到 LuckPerms API: " + e.getMessage());
+        }
     }
 
     @Override
@@ -150,6 +166,69 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         } catch (SQLException e) {
             getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 关闭数据库连接时出错: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+    
+    /**
+     * 获取玩家的权限组名称
+     */
+    private String getPlayerGroup(Player player) {
+        if (luckPerms == null) return "未知";
+        
+        try {
+            User user = luckPerms.getUserManager().getUser(player.getUniqueId());
+            if (user == null) return "默认";
+            
+            String primaryGroup = user.getPrimaryGroup();
+            if (primaryGroup == null || primaryGroup.isEmpty()) return "默认";
+            
+            return primaryGroup;
+        } catch (Exception e) {
+            getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 获取玩家权限组时出错: " + e.getMessage());
+            return "默认";
+        }
+    }
+    
+    /**
+     * 获取玩家的称号
+     */
+    private String getPlayerPrefix(Player player) {
+        if (luckPerms == null) return "暂时还没有称号喵~";
+        
+        try {
+            User user = luckPerms.getUserManager().getUser(player.getUniqueId());
+            if (user == null) return "暂时还没有称号喵~";
+            
+            // 使用MetaData获取前缀
+            String prefix = user.getCachedData().getMetaData().getPrefix();
+            if (prefix != null && !prefix.isEmpty()) {
+                getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby] 玩家 " + player.getName() + " 的称号: " + prefix);
+                return prefix;
+            }
+            
+            // 如果没有前缀，尝试获取其他元数据
+            net.luckperms.api.cacheddata.CachedMetaData metaData = user.getCachedData().getMetaData();
+            if (metaData != null) {
+                getServer().getConsoleSender().sendMessage(ChatColor.YELLOW + "[NekoLobby] 玩家 " + player.getName() + " 的元数据不为空");
+                // 尝试获取所有前缀
+                java.util.SortedMap<Integer, String> prefixes = metaData.getPrefixes();
+                if (prefixes != null && !prefixes.isEmpty()) {
+                    getServer().getConsoleSender().sendMessage(ChatColor.YELLOW + "[NekoLobby] 玩家 " + player.getName() + " 有 " + prefixes.size() + " 个前缀");
+                    // 返回第一个前缀
+                    String firstPrefix = prefixes.values().iterator().next();
+                    if (firstPrefix != null && !firstPrefix.isEmpty()) {
+                        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby] 玩家 " + player.getName() + " 的第一个前缀: " + firstPrefix);
+                        return firstPrefix;
+                    }
+                }
+            }
+            
+            getServer().getConsoleSender().sendMessage(ChatColor.YELLOW + "[NekoLobby] 玩家 " + player.getName() + " 没有找到称号");
+            return "暂时还没有称号喵~";
+        } catch (Exception e) {
+            getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 获取玩家称号时出错: " + e.getMessage());
+            e.printStackTrace();
+            return "暂时还没有称号喵~";
         }
     }
 
@@ -515,11 +594,15 @@ public final class NekoLobby extends JavaPlugin implements Listener {
     }
 
     private void openPlayerProfileGUI(Player p) {
-        // 创建个人档案GUI
-        Inventory profileGUI = Bukkit.createInventory(null, 54, ChatColor.BLUE + "个人档案");
+        // 创建个人档案GUI - 二次元风格
+        Inventory profileGUI = Bukkit.createInventory(null, 54, ChatColor.LIGHT_PURPLE + "✿ " + ChatColor.BOLD + "个人档案" + ChatColor.LIGHT_PURPLE + " ✿");
         
         // 获取玩家名称
         String playerName = p.getName();
+        
+        // 获取权限组和称号
+        String group = getPlayerGroup(p);
+        String prefix = getPlayerPrefix(p);
         
         // 从数据库获取玩家信息
         Map<String, Object> authInfo = getPlayerAuthInfo(playerName);
@@ -552,18 +635,17 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         // 计算Bedwars W/L比率
         double wlRatio = loses > 0 ? (double) wins / loses : wins;
         
-        // 计算玩家游戏时间
-        long totalPlayTime = playerTotalPlayTime.getOrDefault(p, 0L);
-        Long joinTime = playerJoinTime.get(p);
-        if (joinTime != null) {
-            // 加上当前会话的时间
-            totalPlayTime += System.currentTimeMillis() - joinTime;
-        }
+        // 天坑乱斗统计
+        int pitKills = (Integer) thepitStats.getOrDefault("kills", 0);
+        int pitDeaths = (Integer) thepitStats.getOrDefault("deaths", 0);
+        int pitAssists = (Integer) thepitStats.getOrDefault("assists", 0);
+        int pitDamageDealt = (Integer) thepitStats.getOrDefault("damage_dealt", 0);
+        int pitDamageTaken = (Integer) thepitStats.getOrDefault("damage_taken", 0);
+        int pitLevel = (Integer) thepitStats.getOrDefault("level", 1);
         
-        long totalHours = totalPlayTime / (1000 * 60 * 60);
-        long totalMinutes = (totalPlayTime / (1000 * 60)) % 60;
+        double pitKdRatio = pitDeaths > 0 ? (double) pitKills / pitDeaths : pitKills;
         
-        // 玩家头像
+        // 玩家头像 - 二次元风格
         Material playerHeadMat = Material.matchMaterial("SKULL_ITEM");
         ItemStack playerHead = playerHeadMat != null ? 
             new ItemStack(playerHeadMat, 1, (short) 3) : 
@@ -576,123 +658,179 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             // 1.13及以上版本
             headMeta.setOwningPlayer(p);
         }
-        headMeta.setDisplayName(ChatColor.YELLOW + p.getName());
+        headMeta.setDisplayName(ChatColor.LIGHT_PURPLE + "★ " + ChatColor.BOLD + playerName + ChatColor.LIGHT_PURPLE + " ★");
         
-        // 添加玩家信息到Lore
+        // 添加玩家信息到Lore - 二次元风格
         List<String> headLore = new ArrayList<>();
-        headLore.add(ChatColor.GRAY + "等级: " + ChatColor.GREEN + level);
-        headLore.add(ChatColor.GRAY + "最后登录: " + ChatColor.GREEN + lastLoginStr);
+        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "权限组: " + ChatColor.YELLOW + group + ChatColor.WHITE + " ✿");
+        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "称号: " + ChatColor.RESET + prefix + ChatColor.WHITE + " ✿");
+        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "等级: " + ChatColor.YELLOW + level + ChatColor.WHITE + " ✿");
+        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "最后登录: " + ChatColor.GREEN + lastLoginStr + ChatColor.WHITE + " ✿");
         headLore.add("");
-        headLore.add(ChatColor.GOLD + "▶ 点击查看详细信息");
+        headLore.add(ChatColor.LIGHT_PURPLE + "❀ " + ChatColor.BOLD + "点击查看详情" + ChatColor.LIGHT_PURPLE + " ❀");
         headMeta.setLore(headLore);
         playerHead.setItemMeta(headMeta);
         
-        // 装饰性玻璃板 - 蓝色边框
-        Material blueGlassMat = Material.matchMaterial("STAINED_GLASS_PANE");
-        ItemStack blueGlassPane = blueGlassMat != null ? 
-            new ItemStack(blueGlassMat, 1, (short) 11) : 
-            new ItemStack(Material.BLUE_STAINED_GLASS_PANE, 1);
-        ItemMeta blueGlassMeta = blueGlassPane.getItemMeta();
-        blueGlassMeta.setDisplayName(" ");
-        blueGlassPane.setItemMeta(blueGlassMeta);
+        // 装饰性玻璃板 - 粉色边框 (二次元风格)
+        Material pinkGlassMat = Material.matchMaterial("STAINED_GLASS_PANE");
+        ItemStack pinkGlassPane = pinkGlassMat != null ? 
+            new ItemStack(pinkGlassMat, 1, (short) 6) : 
+            new ItemStack(Material.PINK_STAINED_GLASS_PANE, 1);
+        ItemMeta pinkGlassMeta = pinkGlassPane.getItemMeta();
+        pinkGlassMeta.setDisplayName(ChatColor.WHITE + "❀");
+        pinkGlassPane.setItemMeta(pinkGlassMeta);
         
-        // 装饰性玻璃板 - 灰色背景
-        Material grayGlassMat = Material.matchMaterial("STAINED_GLASS_PANE");
-        ItemStack grayGlassPane = grayGlassMat != null ? 
-            new ItemStack(grayGlassMat, 1, (short) 7) : 
-            new ItemStack(Material.GRAY_STAINED_GLASS_PANE, 1);
-        ItemMeta grayGlassMeta = grayGlassPane.getItemMeta();
-        grayGlassMeta.setDisplayName(" ");
-        grayGlassPane.setItemMeta(grayGlassMeta);
+        // 装饰性玻璃板 - 淡紫色背景 (二次元风格)
+        Material purpleGlassMat = Material.matchMaterial("STAINED_GLASS_PANE");
+        ItemStack purpleGlassPane = purpleGlassMat != null ? 
+            new ItemStack(purpleGlassMat, 1, (short) 2) : 
+            new ItemStack(Material.MAGENTA_STAINED_GLASS_PANE, 1);
+        ItemMeta purpleGlassMeta = purpleGlassPane.getItemMeta();
+        purpleGlassMeta.setDisplayName(ChatColor.WHITE + "✿");
+        purpleGlassPane.setItemMeta(purpleGlassMeta);
         
-        // 填充背景
+        // 装饰性玻璃板 - 白色装饰 (二次元风格)
+        Material whiteGlassMat = Material.matchMaterial("STAINED_GLASS_PANE");
+        ItemStack whiteGlassPane = whiteGlassMat != null ? 
+            new ItemStack(whiteGlassMat, 1, (short) 0) : 
+            new ItemStack(Material.WHITE_STAINED_GLASS_PANE, 1);
+        ItemMeta whiteGlassMeta = whiteGlassPane.getItemMeta();
+        whiteGlassMeta.setDisplayName(ChatColor.WHITE + "❁");
+        whiteGlassPane.setItemMeta(whiteGlassMeta);
+        
+        // 填充背景 - 使用淡紫色玻璃板
         for (int i = 0; i < 54; i++) {
-            profileGUI.setItem(i, grayGlassPane.clone());
+            profileGUI.setItem(i, purpleGlassPane.clone());
         }
         
-        // 设置蓝色边框
+        // 设置粉色边框
         int[] borderSlots = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 17, 18, 26, 27, 35, 36, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53};
         for (int slot : borderSlots) {
-            profileGUI.setItem(slot, blueGlassPane.clone());
+            profileGUI.setItem(slot, pinkGlassPane.clone());
         }
         
-        // 设置玩家头像在中心位置
-        profileGUI.setItem(13, playerHead);
+        // 添加装饰点 - 创建更美观的布局
+        int[] decorationSlots = {10, 11, 12, 14, 15, 16, 19, 20, 21, 23, 24, 25, 28, 29, 30, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43};
+        for (int slot : decorationSlots) {
+            profileGUI.setItem(slot, whiteGlassPane.clone());
+        }
         
-        // 玩家统计信息
+        // 设置玩家头像在顶部中心位置
+        profileGUI.setItem(4, playerHead);
+        
+        // 玩家统计信息 - 二次元风格 (第二行中间)
         Material bookMat = Material.matchMaterial("BOOK");
         ItemStack statsItem = bookMat != null ? 
             new ItemStack(bookMat) : 
             new ItemStack(Material.WRITTEN_BOOK);
         ItemMeta statsMeta = statsItem.getItemMeta();
-        statsMeta.setDisplayName(ChatColor.GREEN + "统计信息");
+        statsMeta.setDisplayName(ChatColor.AQUA + "✉ " + ChatColor.BOLD + "基础信息" + ChatColor.AQUA + " ✉");
         List<String> statsLore = new ArrayList<>();
-        statsLore.add(ChatColor.GRAY + "注册时间: " + ChatColor.YELLOW + regDateStr);
-        statsLore.add(ChatColor.GRAY + "邮箱: " + ChatColor.YELLOW + email);
+        statsLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "注册时间: " + ChatColor.YELLOW + regDateStr + ChatColor.WHITE + " ✿");
+        statsLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "邮箱地址: " + ChatColor.YELLOW + email + ChatColor.WHITE + " ✿");
+        statsLore.add("");
+        statsLore.add(ChatColor.LIGHT_PURPLE + "❁ " + ChatColor.ITALIC + "玩家基本信息" + ChatColor.LIGHT_PURPLE + " ❁");
         statsMeta.setLore(statsLore);
         statsItem.setItemMeta(statsMeta);
-        profileGUI.setItem(31, statsItem);
+        profileGUI.setItem(22, statsItem);
         
-        // 等级信息
+        // 等级信息 - 二次元风格 (第二行右侧)
         Material expBottleMat = Material.matchMaterial("EXP_BOTTLE");
         ItemStack levelItem = expBottleMat != null ? 
             new ItemStack(expBottleMat) : 
             new ItemStack(Material.EXPERIENCE_BOTTLE);
         ItemMeta levelMeta = levelItem.getItemMeta();
-        levelMeta.setDisplayName(ChatColor.AQUA + "等级信息");
+        levelMeta.setDisplayName(ChatColor.GREEN + "✧ " + ChatColor.BOLD + "等级信息" + ChatColor.GREEN + " ✧");
         List<String> levelLore = new ArrayList<>();
-        levelLore.add(ChatColor.GRAY + "当前等级: " + ChatColor.GREEN + level);
-        levelLore.add(ChatColor.GRAY + "经验值: " + ChatColor.GREEN + experience);
+        levelLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "当前等级: " + ChatColor.LIGHT_PURPLE + level + ChatColor.WHITE + " ✿");
+        levelLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "经验值: " + ChatColor.LIGHT_PURPLE + experience + ChatColor.WHITE + " ✿");
+        levelLore.add("");
+        levelLore.add(ChatColor.AQUA + "❁ " + ChatColor.ITALIC + "经验值成长记录" + ChatColor.AQUA + " ❁");
         levelMeta.setLore(levelLore);
         levelItem.setItemMeta(levelMeta);
-        profileGUI.setItem(29, levelItem);
+        profileGUI.setItem(24, levelItem);
         
-        // Bedwars统计
+        // Bedwars统计 - 二次元风格 (第三行左侧)
         Material bedMat = Material.matchMaterial("BED");
         ItemStack bedwarsItem = bedMat != null ? 
             new ItemStack(bedMat) : 
             new ItemStack(Material.RED_BED);
         ItemMeta bedwarsMeta = bedwarsItem.getItemMeta();
-        bedwarsMeta.setDisplayName(ChatColor.RED + "Bedwars统计");
+        bedwarsMeta.setDisplayName(ChatColor.RED + "⚔ " + ChatColor.BOLD + "起床战争" + ChatColor.RED + " ⚔");
         List<String> bedwarsLore = new ArrayList<>();
-        bedwarsLore.add(ChatColor.GRAY + "击杀数: " + ChatColor.GREEN + kills);
-        bedwarsLore.add(ChatColor.GRAY + "死亡数: " + ChatColor.GREEN + deaths);
-        bedwarsLore.add(ChatColor.GRAY + "K/D比率: " + ChatColor.GREEN + String.format("%.2f", kdRatio));
-        bedwarsLore.add(ChatColor.GRAY + "胜利数: " + ChatColor.GREEN + wins);
-        bedwarsLore.add(ChatColor.GRAY + "失败数: " + ChatColor.GREEN + loses);
-        bedwarsLore.add(ChatColor.GRAY + "W/L比率: " + ChatColor.GREEN + String.format("%.2f", wlRatio));
-        bedwarsLore.add(ChatColor.GRAY + "总分数: " + ChatColor.GREEN + score);
+        bedwarsLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "击杀数: " + ChatColor.GREEN + kills + ChatColor.WHITE + " ✿");
+        bedwarsLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "死亡数: " + ChatColor.RED + deaths + ChatColor.WHITE + " ✿");
+        bedwarsLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "K/D比率: " + (kdRatio >= 1.0 ? ChatColor.GREEN : ChatColor.RED) + String.format("%.2f", kdRatio) + ChatColor.WHITE + " ✿");
+        bedwarsLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "胜利数: " + ChatColor.GREEN + wins + ChatColor.WHITE + " ✿");
+        bedwarsLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "失败数: " + ChatColor.RED + loses + ChatColor.WHITE + " ✿");
+        bedwarsLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "W/L比率: " + (wlRatio >= 1.0 ? ChatColor.GREEN : ChatColor.RED) + String.format("%.2f", wlRatio) + ChatColor.WHITE + " ✿");
+        bedwarsLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "总分数: " + ChatColor.AQUA + score + ChatColor.WHITE + " ✿");
+        bedwarsLore.add("");
+        bedwarsLore.add(ChatColor.LIGHT_PURPLE + "❁ " + ChatColor.ITALIC + "战斗数据统计" + ChatColor.LIGHT_PURPLE + " ❁");
         bedwarsMeta.setLore(bedwarsLore);
         bedwarsItem.setItemMeta(bedwarsMeta);
-        profileGUI.setItem(33, bedwarsItem);
+        profileGUI.setItem(30, bedwarsItem);
         
-        // 天坑乱斗统计
-        int pitKills = (Integer) thepitStats.getOrDefault("kills", 0);
-        int pitDeaths = (Integer) thepitStats.getOrDefault("deaths", 0);
-        int pitAssists = (Integer) thepitStats.getOrDefault("assists", 0);
-        int pitDamageDealt = (Integer) thepitStats.getOrDefault("damage_dealt", 0);
-        int pitDamageTaken = (Integer) thepitStats.getOrDefault("damage_taken", 0);
-        int pitLevel = (Integer) thepitStats.getOrDefault("level", 1);
-        
-        double pitKdRatio = pitDeaths > 0 ? (double) pitKills / pitDeaths : pitKills;
-        
+        // 天坑乱斗统计 - 二次元风格 (第三行右侧)
         Material diamondSwordMat = Material.matchMaterial("DIAMOND_SWORD");
         ItemStack thepitItem = diamondSwordMat != null ? 
             new ItemStack(diamondSwordMat) : 
             new ItemStack(Material.DIAMOND_SWORD);
         ItemMeta thepitMeta = thepitItem.getItemMeta();
-        thepitMeta.setDisplayName(ChatColor.GOLD + "天坑乱斗统计");
+        thepitMeta.setDisplayName(ChatColor.GOLD + "⚔ " + ChatColor.BOLD + "天坑乱斗" + ChatColor.GOLD + " ⚔");
         List<String> thepitLore = new ArrayList<>();
-        thepitLore.add(ChatColor.GRAY + "等级: " + ChatColor.GREEN + pitLevel);
-        thepitLore.add(ChatColor.GRAY + "击杀数: " + ChatColor.GREEN + pitKills);
-        thepitLore.add(ChatColor.GRAY + "死亡数: " + ChatColor.GREEN + pitDeaths);
-        thepitLore.add(ChatColor.GRAY + "助攻数: " + ChatColor.GREEN + pitAssists);
-        thepitLore.add(ChatColor.GRAY + "K/D比率: " + ChatColor.GREEN + String.format("%.2f", pitKdRatio));
-        thepitLore.add(ChatColor.GRAY + "造成伤害: " + ChatColor.GREEN + pitDamageDealt);
-        thepitLore.add(ChatColor.GRAY + "受到伤害: " + ChatColor.GREEN + pitDamageTaken);
+        thepitLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "等级: " + ChatColor.LIGHT_PURPLE + pitLevel + ChatColor.WHITE + " ✿");
+        thepitLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "击杀数: " + ChatColor.GREEN + pitKills + ChatColor.WHITE + " ✿");
+        thepitLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "死亡数: " + ChatColor.RED + pitDeaths + ChatColor.WHITE + " ✿");
+        thepitLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "助攻数: " + ChatColor.AQUA + pitAssists + ChatColor.WHITE + " ✿");
+        thepitLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "K/D比率: " + (pitKdRatio >= 1.0 ? ChatColor.GREEN : ChatColor.RED) + String.format("%.2f", pitKdRatio) + ChatColor.WHITE + " ✿");
+        thepitLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "造成伤害: " + ChatColor.GREEN + pitDamageDealt + ChatColor.WHITE + " ✿");
+        thepitLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "受到伤害: " + ChatColor.RED + pitDamageTaken + ChatColor.WHITE + " ✿");
+        thepitLore.add("");
+        thepitLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "竞技场战斗记录" + ChatColor.YELLOW + " ❁");
         thepitMeta.setLore(thepitLore);
         thepitItem.setItemMeta(thepitMeta);
-        profileGUI.setItem(41, thepitItem);
+        profileGUI.setItem(32, thepitItem);
+        
+        // 在线时长信息 - 二次元风格 (第四行左侧)
+        long totalPlayTime = playerTotalPlayTime.getOrDefault(p, 0L);
+        Long joinTime = playerJoinTime.get(p);
+        if (joinTime != null) {
+            // 加上当前会话的时间
+            totalPlayTime += System.currentTimeMillis() - joinTime;
+        }
+        
+        long totalHours = totalPlayTime / (1000 * 60 * 60);
+        long totalMinutes = (totalPlayTime / (1000 * 60)) % 60;
+        
+        Material clockMat = Material.matchMaterial("WATCH");
+        ItemStack timeItem = clockMat != null ? 
+            new ItemStack(clockMat) : 
+            new ItemStack(Material.CLOCK);
+        ItemMeta timeMeta = timeItem.getItemMeta();
+        timeMeta.setDisplayName(ChatColor.AQUA + "⏰ " + ChatColor.BOLD + "在线时长" + ChatColor.AQUA + " ⏰");
+        List<String> timeLore = new ArrayList<>();
+        timeLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "总计时长: " + ChatColor.LIGHT_PURPLE + totalHours + "小时 " + totalMinutes + "分钟" + ChatColor.WHITE + " ✿");
+        timeLore.add("");
+        timeLore.add(ChatColor.LIGHT_PURPLE + "❁ " + ChatColor.ITALIC + "服务器在线时间记录" + ChatColor.LIGHT_PURPLE + " ❁");
+        timeMeta.setLore(timeLore);
+        timeItem.setItemMeta(timeMeta);
+        profileGUI.setItem(39, timeItem);
+        
+        // 登录次数信息 - 二次元风格 (第四行右侧)
+        Material paperMat = Material.matchMaterial("PAPER");
+        ItemStack loginItem = paperMat != null ? 
+            new ItemStack(paperMat) : 
+            new ItemStack(Material.PAPER);
+        ItemMeta loginMeta = loginItem.getItemMeta();
+        loginMeta.setDisplayName(ChatColor.GREEN + "📝 " + ChatColor.BOLD + "登录统计" + ChatColor.GREEN + " 📝");
+        List<String> loginLore = new ArrayList<>();
+        loginLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "登录次数: " + ChatColor.LIGHT_PURPLE + "未知" + ChatColor.WHITE + " ✿");
+        loginLore.add("");
+        loginLore.add(ChatColor.LIGHT_PURPLE + "❁ " + ChatColor.ITALIC + "登录历史统计" + ChatColor.LIGHT_PURPLE + " ❁");
+        loginMeta.setLore(loginLore);
+        loginItem.setItemMeta(loginMeta);
+        profileGUI.setItem(41, loginItem);
         
         // 打开GUI
         p.openInventory(profileGUI);
@@ -746,7 +884,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             return;
         }
         // 检查是否是个人档案GUI，如果是则允许交互
-        if (e.getView().getTitle().equals(ChatColor.BLUE + "个人档案")) {
+        if (e.getView().getTitle().equals(ChatColor.LIGHT_PURPLE + "✿ " + ChatColor.BOLD + "个人档案" + ChatColor.LIGHT_PURPLE + " ✿")) {
             // 处理个人档案GUI中的交互
             handleProfileGUIInteraction(e);
             return;
@@ -783,53 +921,71 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         Material glassPaneMat = Material.matchMaterial("STAINED_GLASS_PANE");
         boolean isGlassPane = glassPaneMat != null ? 
             clickedItem.getType() == glassPaneMat : 
-            clickedItem.getType() == Material.GRAY_STAINED_GLASS_PANE || clickedItem.getType() == Material.BLUE_STAINED_GLASS_PANE;
+            clickedItem.getType() == Material.GRAY_STAINED_GLASS_PANE || 
+            clickedItem.getType() == Material.BLUE_STAINED_GLASS_PANE ||
+            clickedItem.getType() == Material.PINK_STAINED_GLASS_PANE ||
+            clickedItem.getType() == Material.MAGENTA_STAINED_GLASS_PANE ||
+            clickedItem.getType() == Material.WHITE_STAINED_GLASS_PANE;
             
         if (clickedItem == null || clickedItem.getType() == Material.AIR || isGlassPane) {
             return;
         }
         
-        // 如果点击的是玩家头像，则显示更多详细信息
+        // 如果点击的是玩家头像，则显示更多详细信息 - 二次元风格
         Material skullMat = Material.matchMaterial("SKULL_ITEM");
         if ((skullMat != null && clickedItem.getType() == skullMat) || clickedItem.getType() == Material.PLAYER_HEAD) {
-            player.sendMessage(ChatColor.GREEN + "玩家详细信息:");
-            player.sendMessage(ChatColor.GRAY + "  名称: " + ChatColor.YELLOW + player.getName());
-            player.sendMessage(ChatColor.GRAY + "  UUID: " + ChatColor.YELLOW + player.getUniqueId());
-            player.sendMessage(ChatColor.GRAY + "  等级: " + ChatColor.YELLOW + level);
+            player.sendMessage(ChatColor.LIGHT_PURPLE + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+            player.sendMessage(ChatColor.AQUA + "                   玩家详细信息");
+            player.sendMessage(ChatColor.LIGHT_PURPLE + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+            player.sendMessage(ChatColor.YELLOW + "  ✿ 名称: " + ChatColor.WHITE + player.getName());
+            player.sendMessage(ChatColor.YELLOW + "  ✿ UUID: " + ChatColor.WHITE + player.getUniqueId());
+            player.sendMessage(ChatColor.YELLOW + "  ✿ 等级: " + ChatColor.WHITE + level);
+            player.sendMessage(ChatColor.LIGHT_PURPLE + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
             return;
         }
         
-        // 如果点击的是统计信息书本
+        // 如果点击的是统计信息书本 - 二次元风格
         Material bookMat = Material.matchMaterial("BOOK");
         if ((bookMat != null && clickedItem.getType() == bookMat) || clickedItem.getType() == Material.WRITTEN_BOOK) {
-            player.sendMessage(ChatColor.GREEN + "统计信息:");
-            player.sendMessage(ChatColor.GRAY + "  注册时间: " + ChatColor.YELLOW + regDateStr);
-            player.sendMessage(ChatColor.GRAY + "  邮箱: " + ChatColor.YELLOW + email);
+            player.sendMessage(ChatColor.AQUA + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+            player.sendMessage(ChatColor.GOLD + "                   基础信息");
+            player.sendMessage(ChatColor.AQUA + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+            player.sendMessage(ChatColor.YELLOW + "  ✿ 注册时间: " + ChatColor.WHITE + regDateStr);
+            player.sendMessage(ChatColor.YELLOW + "  ✿ 邮箱地址: " + ChatColor.WHITE + email);
+            player.sendMessage(ChatColor.AQUA + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
             return;
         }
         
-        // 如果点击的是等级信息
+        // 如果点击的是等级信息 - 二次元风格
         Material expBottleMat = Material.matchMaterial("EXP_BOTTLE");
         if ((expBottleMat != null && clickedItem.getType() == expBottleMat) || clickedItem.getType() == Material.EXPERIENCE_BOTTLE) {
-            player.sendMessage(ChatColor.AQUA + "等级信息:");
-            player.sendMessage(ChatColor.GRAY + "  当前等级: " + ChatColor.GREEN + level);
-            player.sendMessage(ChatColor.GRAY + "  经验值: " + ChatColor.GREEN + experience);
+            player.sendMessage(ChatColor.GREEN + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+            player.sendMessage(ChatColor.LIGHT_PURPLE + "                   等级信息");
+            player.sendMessage(ChatColor.GREEN + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+            player.sendMessage(ChatColor.YELLOW + "  ✿ 当前等级: " + ChatColor.WHITE + level);
+            player.sendMessage(ChatColor.YELLOW + "  ✿ 经验值: " + ChatColor.WHITE + experience);
+            player.sendMessage(ChatColor.GREEN + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
             return;
         }
         
-        // 如果点击的是Bedwars统计
+        // 如果点击的是Bedwars统计 - 二次元风格
         Material bedMat = Material.matchMaterial("BED");
         if ((bedMat != null && clickedItem.getType() == bedMat) || clickedItem.getType() == Material.RED_BED) {
-            player.sendMessage(ChatColor.RED + "Bedwars统计:");
-            player.sendMessage(ChatColor.GRAY + "  击杀数: " + ChatColor.GREEN + kills);
-            player.sendMessage(ChatColor.GRAY + "  死亡数: " + ChatColor.GREEN + deaths);
-            player.sendMessage(ChatColor.GRAY + "  胜利数: " + ChatColor.GREEN + wins);
-            player.sendMessage(ChatColor.GRAY + "  失败数: " + ChatColor.GREEN + loses);
-            player.sendMessage(ChatColor.GRAY + "  总分数: " + ChatColor.GREEN + score);
+            player.sendMessage(ChatColor.RED + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+            player.sendMessage(ChatColor.GOLD + "                   起床战争");
+            player.sendMessage(ChatColor.RED + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+            player.sendMessage(ChatColor.YELLOW + "  ✿ 击杀数: " + ChatColor.WHITE + kills);
+            player.sendMessage(ChatColor.YELLOW + "  ✿ 死亡数: " + ChatColor.WHITE + deaths);
+            player.sendMessage(ChatColor.YELLOW + "  ✿ 胜利数: " + ChatColor.WHITE + wins);
+            player.sendMessage(ChatColor.YELLOW + "  ✿ 失败数: " + ChatColor.WHITE + loses);
+            player.sendMessage(ChatColor.YELLOW + "  ✿ 总分数: " + ChatColor.WHITE + score);
+            player.sendMessage(ChatColor.RED + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
             return;
         }
         
-        // 如果点击的是天坑乱斗统计
+        
+        
+        // 如果点击的是天坑乱斗统计 - 二次元风格
         Material diamondSwordMat = Material.matchMaterial("DIAMOND_SWORD");
         if ((diamondSwordMat != null && clickedItem.getType() == diamondSwordMat) || clickedItem.getType() == Material.DIAMOND_SWORD) {
             Map<String, Object> thepitStats = getPlayerThypitStats(playerName);
@@ -838,11 +994,46 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             int pitAssists = (Integer) thepitStats.getOrDefault("assists", 0);
             int pitLevel = (Integer) thepitStats.getOrDefault("level", 1);
             
-            player.sendMessage(ChatColor.GOLD + "天坑乱斗统计:");
-            player.sendMessage(ChatColor.GRAY + "  等级: " + ChatColor.GREEN + pitLevel);
-            player.sendMessage(ChatColor.GRAY + "  击杀数: " + ChatColor.GREEN + pitKills);
-            player.sendMessage(ChatColor.GRAY + "  死亡数: " + ChatColor.GREEN + pitDeaths);
-            player.sendMessage(ChatColor.GRAY + "  助攻数: " + ChatColor.GREEN + pitAssists);
+            player.sendMessage(ChatColor.GOLD + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+            player.sendMessage(ChatColor.LIGHT_PURPLE + "                   天坑乱斗");
+            player.sendMessage(ChatColor.GOLD + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+            player.sendMessage(ChatColor.YELLOW + "  ✿ 等级: " + ChatColor.WHITE + pitLevel);
+            player.sendMessage(ChatColor.YELLOW + "  ✿ 击杀数: " + ChatColor.WHITE + pitKills);
+            player.sendMessage(ChatColor.YELLOW + "  ✿ 死亡数: " + ChatColor.WHITE + pitDeaths);
+            player.sendMessage(ChatColor.YELLOW + "  ✿ 助攻数: " + ChatColor.WHITE + pitAssists);
+            player.sendMessage(ChatColor.GOLD + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+            return;
+        }
+        
+        // 如果点击的是在线时长信息 - 二次元风格
+        Material clockMat = Material.matchMaterial("WATCH");
+        if ((clockMat != null && clickedItem.getType() == clockMat) || clickedItem.getType() == Material.CLOCK) {
+            long totalPlayTime = playerTotalPlayTime.getOrDefault(player, 0L);
+            Long joinTime = playerJoinTime.get(player);
+            if (joinTime != null) {
+                // 加上当前会话的时间
+                totalPlayTime += System.currentTimeMillis() - joinTime;
+            }
+            
+            long totalHours = totalPlayTime / (1000 * 60 * 60);
+            long totalMinutes = (totalPlayTime / (1000 * 60)) % 60;
+            
+            player.sendMessage(ChatColor.AQUA + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+            player.sendMessage(ChatColor.LIGHT_PURPLE + "                   在线时长");
+            player.sendMessage(ChatColor.AQUA + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+            player.sendMessage(ChatColor.YELLOW + "  ✿ 总计时长: " + ChatColor.WHITE + totalHours + "小时 " + totalMinutes + "分钟");
+            player.sendMessage(ChatColor.AQUA + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+            return;
+        }
+        
+        // 如果点击的是登录统计信息 - 二次元风格
+        Material paperMat = Material.matchMaterial("PAPER");
+        if ((paperMat != null && clickedItem.getType() == paperMat) || clickedItem.getType() == Material.PAPER) {
+            player.sendMessage(ChatColor.GREEN + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+            player.sendMessage(ChatColor.LIGHT_PURPLE + "                   登录统计");
+            player.sendMessage(ChatColor.GREEN + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+            player.sendMessage(ChatColor.YELLOW + "  ✿ 登录次数: " + ChatColor.WHITE + "未知");
+            player.sendMessage(ChatColor.GREEN + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
             return;
         }
     }
