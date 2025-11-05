@@ -190,7 +190,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
     }
     
     /**
-     * 获取玩家的称号
+     * 获取玩家的称号 (使用suffix.0)
      */
     private String getPlayerPrefix(Player player) {
         if (luckPerms == null) return "暂时还没有称号喵~";
@@ -199,26 +199,17 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             User user = luckPerms.getUserManager().getUser(player.getUniqueId());
             if (user == null) return "暂时还没有称号喵~";
             
-            // 使用MetaData获取前缀
-            String prefix = user.getCachedData().getMetaData().getPrefix();
-            if (prefix != null && !prefix.isEmpty()) {
-                getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby] 玩家 " + player.getName() + " 的称号: " + prefix);
-                return prefix;
-            }
-            
-            // 如果没有前缀，尝试获取其他元数据
+            // 使用MetaData获取后缀suffix.0
             net.luckperms.api.cacheddata.CachedMetaData metaData = user.getCachedData().getMetaData();
             if (metaData != null) {
-                getServer().getConsoleSender().sendMessage(ChatColor.YELLOW + "[NekoLobby] 玩家 " + player.getName() + " 的元数据不为空");
-                // 尝试获取所有前缀
-                java.util.SortedMap<Integer, String> prefixes = metaData.getPrefixes();
-                if (prefixes != null && !prefixes.isEmpty()) {
-                    getServer().getConsoleSender().sendMessage(ChatColor.YELLOW + "[NekoLobby] 玩家 " + player.getName() + " 有 " + prefixes.size() + " 个前缀");
-                    // 返回第一个前缀
-                    String firstPrefix = prefixes.values().iterator().next();
-                    if (firstPrefix != null && !firstPrefix.isEmpty()) {
-                        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby] 玩家 " + player.getName() + " 的第一个前缀: " + firstPrefix);
-                        return firstPrefix;
+                // 获取所有后缀
+                java.util.SortedMap<Integer, String> suffixes = metaData.getSuffixes();
+                if (suffixes != null && !suffixes.isEmpty()) {
+                    // 查找suffix.0 (优先级为0的后缀)
+                    String suffix = suffixes.get(0);
+                    if (suffix != null && !suffix.isEmpty()) {
+                        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby] 玩家 " + player.getName() + " 的称号(suffix.0): " + suffix);
+                        return suffix;
                     }
                 }
             }
@@ -597,18 +588,18 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         // 创建个人档案GUI - 二次元风格
         Inventory profileGUI = Bukkit.createInventory(null, 54, ChatColor.LIGHT_PURPLE + "✿ " + ChatColor.BOLD + "个人档案" + ChatColor.LIGHT_PURPLE + " ✿");
         
-        // 获取玩家名称
-        String playerName = p.getName();
-        
-        // 获取权限组和称号
-        String group = getPlayerGroup(p);
+        // 获取玩家名称
+        String playerName = p.getName();
+        
+        // 从数据库获取玩家信息 (实时获取最新数据)
+        Map<String, Object> authInfo = getPlayerAuthInfo(playerName);
+        Map<String, Object> levelInfo = getPlayerLevelInfo(playerName);
+        Map<String, Object> bedwarsStats = getPlayerBedwarsStats(playerName);
+        Map<String, Object> thepitStats = getPlayerThypitStats(playerName);
+        
+        // 实时获取权限组和称号 (确保使用最新数据)
+        String group = getPlayerGroup(p);
         String prefix = getPlayerPrefix(p);
-        
-        // 从数据库获取玩家信息
-        Map<String, Object> authInfo = getPlayerAuthInfo(playerName);
-        Map<String, Object> levelInfo = getPlayerLevelInfo(playerName);
-        Map<String, Object> bedwarsStats = getPlayerBedwarsStats(playerName);
-        Map<String, Object> thepitStats = getPlayerThypitStats(playerName);
         
         // 获取Authme信息
         String email = (String) authInfo.getOrDefault("email", "未设置");
@@ -852,29 +843,29 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         e.setCancelled(true);
     }
     
-    private void handleProfileGUIInteraction(InventoryClickEvent e) {
-        e.setCancelled(true); // 防止玩家拿取物品
-        Player player = (Player) e.getWhoClicked();
-        ItemStack clickedItem = e.getCurrentItem();
-        
-        // 获取玩家数据用于显示
-        String playerName = player.getName();
-        Map<String, Object> authInfo = getPlayerAuthInfo(playerName);
-        long regDate = (Long) authInfo.getOrDefault("regdate", 0L);
-        String regDateStr = regDate > 0 ? new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(regDate)) : "未知";
-        String email = (String) authInfo.getOrDefault("email", "未设置");
-        
-        // 获取等级信息
-        Map<String, Object> levelInfo = getPlayerLevelInfo(playerName);
-        int level = (Integer) levelInfo.getOrDefault("level", 1);
-        int experience = (Integer) levelInfo.getOrDefault("experience", 0);
-        
-        // 获取Bedwars统计信息
-        Map<String, Object> bedwarsStats = getPlayerBedwarsStats(playerName);
-        int kills = (Integer) bedwarsStats.getOrDefault("kills", 0);
-        int wins = (Integer) bedwarsStats.getOrDefault("wins", 0);
-        int score = (Integer) bedwarsStats.getOrDefault("score", 0);
-        int loses = (Integer) bedwarsStats.getOrDefault("loses", 0);
+    private void handleProfileGUIInteraction(InventoryClickEvent e) {
+        e.setCancelled(true); // 防止玩家拿取物品
+        Player player = (Player) e.getWhoClicked();
+        ItemStack clickedItem = e.getCurrentItem();
+        
+        // 获取玩家数据用于显示 (实时获取最新数据)
+        String playerName = player.getName();
+        Map<String, Object> authInfo = getPlayerAuthInfo(playerName);
+        long regDate = (Long) authInfo.getOrDefault("regdate", 0L);
+        String regDateStr = regDate > 0 ? new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(regDate)) : "未知";
+        String email = (String) authInfo.getOrDefault("email", "未设置");
+        
+        // 获取等级信息 (实时获取最新数据)
+        Map<String, Object> levelInfo = getPlayerLevelInfo(playerName);
+        int level = (Integer) levelInfo.getOrDefault("level", 1);
+        int experience = (Integer) levelInfo.getOrDefault("experience", 0);
+        
+        // 获取Bedwars统计信息 (实时获取最新数据)
+        Map<String, Object> bedwarsStats = getPlayerBedwarsStats(playerName);
+        int kills = (Integer) bedwarsStats.getOrDefault("kills", 0);
+        int wins = (Integer) bedwarsStats.getOrDefault("wins", 0);
+        int score = (Integer) bedwarsStats.getOrDefault("score", 0);
+        int loses = (Integer) bedwarsStats.getOrDefault("loses", 0);
         int deaths = (Integer) bedwarsStats.getOrDefault("deaths", 0);
         
         // 如果点击的是空槽位或装饰性物品，则不处理
@@ -945,13 +936,14 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         
         
         
-        // 如果点击的是天坑乱斗统计 - 二次元风格
-        Material diamondSwordMat = Material.matchMaterial("DIAMOND_SWORD");
-        if ((diamondSwordMat != null && clickedItem.getType() == diamondSwordMat) || clickedItem.getType() == Material.DIAMOND_SWORD) {
-            Map<String, Object> thepitStats = getPlayerThypitStats(playerName);
-            int pitKills = (Integer) thepitStats.getOrDefault("kills", 0);
-            int pitDeaths = (Integer) thepitStats.getOrDefault("deaths", 0);
-            int pitAssists = (Integer) thepitStats.getOrDefault("assists", 0);
+        // 如果点击的是天坑乱斗统计 - 二次元风格
+        Material diamondSwordMat = Material.matchMaterial("DIAMOND_SWORD");
+        if ((diamondSwordMat != null && clickedItem.getType() == diamondSwordMat) || clickedItem.getType() == Material.DIAMOND_SWORD) {
+            // 实时获取天坑乱斗统计信息
+            Map<String, Object> thepitStats = getPlayerThypitStats(playerName);
+            int pitKills = (Integer) thepitStats.getOrDefault("kills", 0);
+            int pitDeaths = (Integer) thepitStats.getOrDefault("deaths", 0);
+            int pitAssists = (Integer) thepitStats.getOrDefault("assists", 0);
             int pitLevel = (Integer) thepitStats.getOrDefault("level", 1);
             
             player.sendMessage(ChatColor.GOLD + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
