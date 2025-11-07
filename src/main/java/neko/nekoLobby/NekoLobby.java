@@ -1223,42 +1223,32 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent e) {
-        Player player = (Player) e.getWhoClicked();
-        
-        // 如果玩家是创造模式，则允许移动物品
-        if (player.getGameMode().name().equals("CREATIVE")) {
-            return;
-        }
-        
-        // 获取Inventory的标题（兼容1.12.2版本）
-        String inventoryTitle = e.getView().getTitle();
-        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] Inventory clicked: " + inventoryTitle);
-        
-        // 检查是否是个人档案GUI，如果是则允许交互
-        String profileTitle = "个人档案";
-        if (inventoryTitle.contains(profileTitle)) {
-            // 处理个人档案GUI中的交互
-            handleProfileGUIInteraction(e);
-            return;
-        }
-        
-        // 检查是否是权益购买GUI，如果是则允许交互
-        String rechargeTitle = "权益购买/充值中心";
-        if (inventoryTitle.contains(rechargeTitle)) {
-            // 处理权益购买GUI中的交互
-            handleRechargeGUIInteraction(e);
-            return;
-        }
-        e.setCancelled(true);
+        Player player = (Player) e.getWhoClicked();
+        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 处理玩家 " + player.getName() + " 的个人档案GUI交互");
+        
+        ItemStack clickedItem = e.getCurrentItem();
+        
+        // 添加点击位置调试信息
+        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 玩家 " + player.getName() + " 点击了槽位 " + e.getSlot());
     }
     
     private void handleProfileGUIInteraction(InventoryClickEvent e) {
 
+
+
         e.setCancelled(true); // 防止玩家拿取物品
+
+
 
         Player player = (Player) e.getWhoClicked();
 
+        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] Handling profile GUI interaction for player " + player.getName());
+
+        
         ItemStack clickedItem = e.getCurrentItem();
+        
+        // 添加点击位置调试信息
+        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] Player " + player.getName() + " clicked slot " + e.getSlot());
 
         
 
@@ -1311,49 +1301,98 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             clickedItem.getType() == Material.WHITE_STAINED_GLASS_PANE;
             
         if (clickedItem == null || clickedItem.getType() == Material.AIR || isGlassPane) {
+
+            getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] Player " + player.getName() + " clicked empty slot or glass pane");
+
             return;
+
         }
+
         
+
         // 如果点击的是玩家头像，则显示更多详细信息 - 二次元风格
+
         Material skullMat = Material.matchMaterial("SKULL_ITEM");
+
         if ((skullMat != null && clickedItem.getType() == skullMat) || clickedItem.getType() == Material.PLAYER_HEAD) {
+
+            getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] Player " + player.getName() + " clicked player head item");
+
             player.sendMessage(ChatColor.LIGHT_PURPLE + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+
             player.sendMessage(ChatColor.AQUA + "                   玩家详细信息");
+
             player.sendMessage(ChatColor.LIGHT_PURPLE + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+
             player.sendMessage(ChatColor.YELLOW + "  ✿ 名称: " + ChatColor.WHITE + player.getName());
+
             player.sendMessage(ChatColor.YELLOW + "  ✿ UUID: " + ChatColor.WHITE + player.getUniqueId());
+
             player.sendMessage(ChatColor.YELLOW + "  ✿ 等级: " + ChatColor.WHITE + level);
+
             player.sendMessage(ChatColor.LIGHT_PURPLE + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+
             return;
+
         }
         
         // 如果点击的是统计信息书本 - 二次元风格
+
         Material bookMat = Material.matchMaterial("BOOK");
+
         if ((bookMat != null && clickedItem.getType() == bookMat) || clickedItem.getType() == Material.WRITTEN_BOOK) {
+
+            getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] Player " + player.getName() + " clicked book item");
+
             player.sendMessage(ChatColor.AQUA + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+
             player.sendMessage(ChatColor.GOLD + "                   基础信息");
+
             player.sendMessage(ChatColor.AQUA + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+
             player.sendMessage(ChatColor.YELLOW + "  ✿ 注册时间: " + ChatColor.WHITE + regDateStr);
+
             player.sendMessage(ChatColor.YELLOW + "  ✿ 邮箱地址: " + ChatColor.WHITE + email);
+
             player.sendMessage(ChatColor.AQUA + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+
             return;
+
         }
         
         // 如果点击的是等级信息 - 二次元风格
 
+
+
         Material expBottleMat = Material.matchMaterial("EXP_BOTTLE");
+
+
 
         if ((expBottleMat != null && clickedItem.getType() == expBottleMat) || clickedItem.getType() == Material.EXPERIENCE_BOTTLE) {
 
+            getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] Player " + player.getName() + " clicked exp bottle item");
+
+
+
             player.sendMessage(ChatColor.GREEN + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+
+
 
             player.sendMessage(ChatColor.LIGHT_PURPLE + "                   等级信息");
 
+
+
             player.sendMessage(ChatColor.GREEN + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+
+
 
             player.sendMessage(ChatColor.YELLOW + "  ✿ 当前等级: " + ChatColor.WHITE + level);
 
+
+
             player.sendMessage(ChatColor.YELLOW + "  ✿ 经验值: " + ChatColor.WHITE + experience);
+
+
 
             player.sendMessage(ChatColor.GREEN + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
 
@@ -1362,17 +1401,31 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         }
         
         // 如果点击的是Bedwars统计 - 二次元风格
+
         Material bedMat = Material.matchMaterial("BED");
+
         if ((bedMat != null && clickedItem.getType() == bedMat) || clickedItem.getType() == Material.RED_BED) {
+
+            getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] Player " + player.getName() + " clicked bed item");
+
             player.sendMessage(ChatColor.RED + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+
             player.sendMessage(ChatColor.GOLD + "                   起床战争");
+
             player.sendMessage(ChatColor.RED + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+
             player.sendMessage(ChatColor.YELLOW + "  ✿ 击杀数: " + ChatColor.WHITE + kills);
+
             player.sendMessage(ChatColor.YELLOW + "  ✿ 死亡数: " + ChatColor.WHITE + deaths);
+
             player.sendMessage(ChatColor.YELLOW + "  ✿ 胜利数: " + ChatColor.WHITE + wins);
+
             player.sendMessage(ChatColor.YELLOW + "  ✿ 失败数: " + ChatColor.WHITE + loses);
+
             player.sendMessage(ChatColor.YELLOW + "  ✿ 总分数: " + ChatColor.WHITE + score);
+
             player.sendMessage(ChatColor.RED + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+
             return;
         }
         
@@ -1380,13 +1433,23 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         
         // 如果点击的是天坑乱斗统计 - 二次元风格
 
+
+
         Material diamondSwordMat = Material.matchMaterial("DIAMOND_SWORD");
+
+
 
         if ((diamondSwordMat != null && clickedItem.getType() == diamondSwordMat) || clickedItem.getType() == Material.DIAMOND_SWORD) {
 
+            getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] Player " + player.getName() + " clicked diamond sword item");
+
             // 实时获取天坑乱斗统计信息
 
+
+
             Map<String, Object> thepitStats = getPlayerThypitStats(playerName);
+
+
 
             int pitKills = (Integer) thepitStats.getOrDefault("kills", 0);
 
@@ -1413,17 +1476,15 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             player.sendMessage(ChatColor.GOLD + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
 
             return;
-
         }
+
+        // 如果没有匹配任何项目，输出调试信息
+        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] Player " + player.getName() + " clicked unknown item: " + clickedItem.getType().name());
 
     }
 
-
-
     /**
-
      * 处理权益购买GUI中的点击事件
-
      */
 
     private void handleRechargeGUIInteraction(InventoryClickEvent e) {
