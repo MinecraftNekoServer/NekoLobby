@@ -53,6 +53,9 @@ import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.model.group.Group;
 
+// PlaceholderAPI
+import me.clip.placeholderapi.PlaceholderAPI;
+
 public final class NekoLobby extends JavaPlugin implements Listener {
     // 存储玩家双击空格时间的Map
     private Map<Player, Long> lastSpacePress = new HashMap<>();
@@ -73,6 +76,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
     private String dbPassword;
     // LuckPerms API
     private LuckPerms luckPerms;
+    private boolean placeholderAPIEnabled;
 
     @Override
     public void onEnable() {
@@ -90,6 +94,15 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby] LuckPerms API 已连接!");
         } catch (Exception e) {
             getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 无法连接到 LuckPerms API: " + e.getMessage());
+        }
+        
+        // 检查PlaceholderAPI是否启用
+        if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            placeholderAPIEnabled = true;
+            getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby] PlaceholderAPI 已连接!");
+        } else {
+            placeholderAPIEnabled = false;
+            getServer().getConsoleSender().sendMessage(ChatColor.YELLOW + "[NekoLobby] PlaceholderAPI 未安装或未启用，部分功能可能受限!");
         }
     }
 
@@ -133,23 +146,55 @@ public final class NekoLobby extends JavaPlugin implements Listener {
     }
     
     /**
+
      * 获取玩家的权限组名称
+
      */
+
     private String getPlayerGroup(Player player) {
+
         if (luckPerms == null) return "未知";
+
         
+
         try {
+
             User user = luckPerms.getUserManager().getUser(player.getUniqueId());
+
             if (user == null) return "默认";
+
             
+
             String primaryGroup = user.getPrimaryGroup();
+
             if (primaryGroup == null || primaryGroup.isEmpty()) return "默认";
+
             
+
+            // 如果PlaceholderAPI可用，则解析权限组中的占位符并转换颜色代码
+
+            if (placeholderAPIEnabled) {
+
+                primaryGroup = PlaceholderAPI.setPlaceholders(player, primaryGroup);
+
+            }
+
+            // 解析颜色代码
+
+            primaryGroup = ChatColor.translateAlternateColorCodes('&', primaryGroup);
+
+            
+
             return primaryGroup;
+
         } catch (Exception e) {
+
             getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 获取玩家权限组时出错: " + e.getMessage());
+
             return "默认";
+
         }
+
     }
     
     /**
@@ -172,6 +217,14 @@ public final class NekoLobby extends JavaPlugin implements Listener {
                     String suffix = suffixes.get(0);
                     if (suffix != null && !suffix.isEmpty()) {
                         getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby] 玩家 " + player.getName() + " 的称号(suffix.0): " + suffix);
+                        
+                        // 如果PlaceholderAPI可用，则解析后缀中的占位符并转换颜色代码
+                        if (placeholderAPIEnabled) {
+                            suffix = PlaceholderAPI.setPlaceholders(player, suffix);
+                        }
+                        // 解析颜色代码
+                        suffix = ChatColor.translateAlternateColorCodes('&', suffix);
+                        
                         return suffix;
                     }
                 }
@@ -187,209 +240,398 @@ public final class NekoLobby extends JavaPlugin implements Listener {
     }
 
     /**
-     * 建立数据库连接的辅助方法
-     */
-    private Connection createDatabaseConnection(String databaseName) throws SQLException {
-        String url = "jdbc:mysql://" + dbHost + ":" + dbPort + "/" + databaseName + 
-                    "?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
-        int maxRetries = 3;
-        int retryCount = 0;
-        SQLException lastException = null;
-        
-        while (retryCount < maxRetries) {
-            try {
-                return DriverManager.getConnection(url, dbUsername, dbPassword);
-            } catch (SQLException e) {
-                lastException = e;
-                retryCount++;
-                getServer().getConsoleSender().sendMessage(ChatColor.YELLOW + "[NekoLobby] 数据库连接失败，正在重试 (" + retryCount + "/" + maxRetries + "): " + e.getMessage());
-                // 等待一段时间后重试
-                try {
-                    Thread.sleep(1000 * retryCount); // 递增等待时间
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    throw new SQLException("数据库连接被中断", ie);
-                }
-            }
-        }
-        // 所有重试都失败了，抛出最后一次异常
-        throw lastException;
-    }
-    
-    /**
-     * 从Authme表获取用户基本信息
-     */
-    private Map<String, Object> getPlayerAuthInfo(String playerName) {
-        Map<String, Object> authInfo = new HashMap<>();
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-        
-        try {
-            conn = createDatabaseConnection("authme");
-            // 使用大小写不敏感的查询
-            String query = "SELECT username, lastlogin, regdate, email FROM authme WHERE LOWER(username) = LOWER(?)";
-            stmt = conn.prepareStatement(query);
-            stmt.setString(1, playerName);
-            rs = stmt.executeQuery();
-            
-            if (rs.next()) {
-                authInfo.put("username", rs.getString("username"));
-                authInfo.put("lastlogin", rs.getLong("lastlogin"));
-                authInfo.put("regdate", rs.getLong("regdate"));
-                authInfo.put("email", rs.getString("email"));
-            }
-        } catch (SQLException e) {
-            getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 查询Authme数据时出错: " + e.getMessage());
-        } finally {
-            // 确保资源被释放
-            try {
-                if (rs != null) rs.close();
-                if (stmt != null) stmt.close();
-                if (conn != null) conn.close();
-            } catch (SQLException e) {
-                getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 关闭Authme数据库资源时出错: " + e.getMessage());
-            }
-        }
-        
-        return authInfo;
+     * 建立数据库连接的辅助方法
+
+     */
+
+    private Connection createDatabaseConnection(String databaseName) throws SQLException {
+
+        String url = "jdbc:mysql://" + dbHost + ":" + dbPort + "/" + databaseName + 
+
+                    "?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
+
+        int maxRetries = 3;
+
+        int retryCount = 0;
+
+        SQLException lastException = null;
+
+        
+
+        while (retryCount < maxRetries) {
+
+            try {
+
+                return DriverManager.getConnection(url, dbUsername, dbPassword);
+
+            } catch (SQLException e) {
+
+                lastException = e;
+
+                retryCount++;
+
+                getServer().getConsoleSender().sendMessage(ChatColor.YELLOW + "[NekoLobby] 数据库连接失败，正在重试 (" + retryCount + "/" + maxRetries + "): " + e.getMessage());
+
+                // 等待一段时间后重试
+
+                try {
+
+                    Thread.sleep(1000 * retryCount); // 递增等待时间
+
+                } catch (InterruptedException ie) {
+
+                    Thread.currentThread().interrupt();
+
+                    throw new SQLException("数据库连接被中断", ie);
+
+                }
+
+            }
+
+        }
+
+        // 所有重试都失败了，抛出最后一次异常
+
+        throw lastException;
+
+    }
+
+    
+
+    /**
+
+     * 从Authme表获取用户基本信息
+
+     */
+
+    private Map<String, Object> getPlayerAuthInfo(String playerName) {
+
+        Map<String, Object> authInfo = new HashMap<>();
+
+        Connection conn = null;
+
+        PreparedStatement stmt = null;
+
+        ResultSet rs = null;
+
+        
+
+        try {
+
+            conn = createDatabaseConnection("authme");
+
+            // 使用大小写不敏感的查询
+
+            String query = "SELECT username, lastlogin, regdate, email FROM authme WHERE LOWER(username) = LOWER(?)";
+
+            stmt = conn.prepareStatement(query);
+
+            stmt.setString(1, playerName);
+
+            rs = stmt.executeQuery();
+
+            
+
+            if (rs.next()) {
+
+                authInfo.put("username", rs.getString("username"));
+
+                authInfo.put("lastlogin", rs.getLong("lastlogin"));
+
+                authInfo.put("regdate", rs.getLong("regdate"));
+
+                authInfo.put("email", rs.getString("email"));
+
+            }
+
+        } catch (SQLException e) {
+
+            getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 查询Authme数据时出错: " + e.getMessage());
+
+        } finally {
+
+            // 确保资源被释放
+
+            try {
+
+                if (rs != null) rs.close();
+
+                if (stmt != null) stmt.close();
+
+                if (conn != null) conn.close();
+
+            } catch (SQLException e) {
+
+                getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 关闭Authme数据库资源时出错: " + e.getMessage());
+
+            }
+
+        }
+
+        
+
+        return authInfo;
+
     }
     
-    private Map<String, Object> getPlayerLevelInfo(String playerName) {
-        Map<String, Object> levelInfo = new HashMap<>();
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-        
-        try {
-            conn = createDatabaseConnection("neko_level");
-            String query = "SELECT name, level, experience FROM player_levels WHERE name = ?";
-            stmt = conn.prepareStatement(query);
-            stmt.setString(1, playerName);
-            rs = stmt.executeQuery();
-            
-            if (rs.next()) {
-                levelInfo.put("name", rs.getString("name"));
-                levelInfo.put("level", rs.getInt("level"));
-                levelInfo.put("experience", rs.getInt("experience"));
-            }
-        } catch (SQLException e) {
-            getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 查询等级数据时出错: " + e.getMessage());
-        } finally {
-            // 确保资源被释放
-            try {
-                if (rs != null) rs.close();
-                if (stmt != null) stmt.close();
-                if (conn != null) conn.close();
-            } catch (SQLException e) {
-                getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 关闭等级数据库资源时出错: " + e.getMessage());
-            }
-        }
-        
-        return levelInfo;
+    private Map<String, Object> getPlayerLevelInfo(String playerName) {
+
+        Map<String, Object> levelInfo = new HashMap<>();
+
+        Connection conn = null;
+
+        PreparedStatement stmt = null;
+
+        ResultSet rs = null;
+
+        
+
+        try {
+
+            conn = createDatabaseConnection("neko_level");
+
+            String query = "SELECT name, level, experience FROM player_levels WHERE name = ?";
+
+            stmt = conn.prepareStatement(query);
+
+            stmt.setString(1, playerName);
+
+            rs = stmt.executeQuery();
+
+            
+
+            if (rs.next()) {
+
+                levelInfo.put("name", rs.getString("name"));
+
+                levelInfo.put("level", rs.getInt("level"));
+
+                levelInfo.put("experience", rs.getInt("experience"));
+
+            }
+
+        } catch (SQLException e) {
+
+            getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 查询等级数据时出错: " + e.getMessage());
+
+        } finally {
+
+            // 确保资源被释放
+
+            try {
+
+                if (rs != null) rs.close();
+
+                if (stmt != null) stmt.close();
+
+                if (conn != null) conn.close();
+
+            } catch (SQLException e) {
+
+                getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 关闭等级数据库资源时出错: " + e.getMessage());
+            }
+        }
+
+        return levelInfo;
+    }
+    /**
+     * 从bw_stats_players表获取Bedwars统计数据
+     */
+
+    private Map<String, Object> getPlayerBedwarsStats(String playerName) {
+
+        Map<String, Object> bedwarsStats = new HashMap<>();
+
+        Connection conn = null;
+
+        PreparedStatement stmt = null;
+
+        ResultSet rs = null;
+
+        
+
+        try {
+
+            conn = createDatabaseConnection("nekobedwars");
+
+            String query = "SELECT name, kills, wins, score, loses, deaths FROM bw_stats_players WHERE name = ?";
+
+            stmt = conn.prepareStatement(query);
+
+            stmt.setString(1, playerName);
+
+            rs = stmt.executeQuery();
+
+            
+
+            if (rs.next()) {
+
+                bedwarsStats.put("name", rs.getString("name"));
+
+                bedwarsStats.put("kills", rs.getInt("kills"));
+
+                bedwarsStats.put("wins", rs.getInt("wins"));
+
+                bedwarsStats.put("score", rs.getInt("score"));
+
+                bedwarsStats.put("loses", rs.getInt("loses"));
+
+                bedwarsStats.put("deaths", rs.getInt("deaths"));
+
+            }
+
+        } catch (SQLException e) {
+
+            getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 查询Bedwars数据时出错: " + e.getMessage());
+
+        } finally {
+
+            // 确保资源被释放
+
+            try {
+
+                if (rs != null) rs.close();
+
+                if (stmt != null) stmt.close();
+
+                if (conn != null) conn.close();
+
+            } catch (SQLException e) {
+
+                getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 关闭Bedwars数据库资源时出错: " + e.getMessage());
+
+            }
+
+        }
+
+        
+
+        return bedwarsStats;
+
     }
     
-    /**
-     * 从bw_stats_players表获取Bedwars统计数据
-     */
-    private Map<String, Object> getPlayerBedwarsStats(String playerName) {
-        Map<String, Object> bedwarsStats = new HashMap<>();
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-        
-        try {
-            conn = createDatabaseConnection("nekobedwars");
-            String query = "SELECT name, kills, wins, score, loses, deaths FROM bw_stats_players WHERE name = ?";
-            stmt = conn.prepareStatement(query);
-            stmt.setString(1, playerName);
-            rs = stmt.executeQuery();
-            
-            if (rs.next()) {
-                bedwarsStats.put("name", rs.getString("name"));
-                bedwarsStats.put("kills", rs.getInt("kills"));
-                bedwarsStats.put("wins", rs.getInt("wins"));
-                bedwarsStats.put("score", rs.getInt("score"));
-                bedwarsStats.put("loses", rs.getInt("loses"));
-                bedwarsStats.put("deaths", rs.getInt("deaths"));
-            }
-        } catch (SQLException e) {
-            getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 查询Bedwars数据时出错: " + e.getMessage());
-        } finally {
-            // 确保资源被释放
-            try {
-                if (rs != null) rs.close();
-                if (stmt != null) stmt.close();
-                if (conn != null) conn.close();
-            } catch (SQLException e) {
-                getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 关闭Bedwars数据库资源时出错: " + e.getMessage());
-            }
-        }
-        
-        return bedwarsStats;
-    }
-    
-    /**
-     * 从天坑乱斗数据库获取统计数据
-     */
-    private Map<String, Object> getPlayerThypitStats(String playerName) {
-        Map<String, Object> thepitStats = new HashMap<>();
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-        PreparedStatement profileStmt = null;
-        ResultSet profileRs = null;
-        
-        try {
-            conn = createDatabaseConnection("thepit");
-            // 查询ThePitStats表获取统计数据
-            String query = "SELECT KILLS, DEATHS, ASSISTS, DAMAGE_DEALT, DAMAGE_TAKEN FROM ThePitStats WHERE Player = ?";
-            stmt = conn.prepareStatement(query);
-            stmt.setString(1, playerName);
-            rs = stmt.executeQuery();
-            
-            if (rs.next()) {
-                thepitStats.put("kills", rs.getInt("KILLS"));
-                thepitStats.put("deaths", rs.getInt("DEATHS"));
-                thepitStats.put("assists", rs.getInt("ASSISTS"));
-                thepitStats.put("damage_dealt", rs.getInt("DAMAGE_DEALT"));
-                thepitStats.put("damage_taken", rs.getInt("DAMAGE_TAKEN"));
-            } else {
-                // 如果没有找到记录，设置默认值
-                thepitStats.put("kills", 0);
-                thepitStats.put("deaths", 0);
-                thepitStats.put("assists", 0);
-                thepitStats.put("damage_dealt", 0);
-                thepitStats.put("damage_taken", 0);
-            }
-            
-            // 查询ThePitProfiles表获取等级信息
-            String profileQuery = "SELECT Level FROM ThePitProfiles WHERE Player = ?";
-            profileStmt = conn.prepareStatement(profileQuery);
-            profileStmt.setString(1, playerName);
-            profileRs = profileStmt.executeQuery();
-            
-            if (profileRs.next()) {
-                thepitStats.put("level", profileRs.getInt("Level"));
-            } else {
-                thepitStats.put("level", 1);
-            }
-        } catch (Exception e) {
-            getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 查询天坑乱斗数据时出错: " + e.getMessage());
-        } finally {
-            // 确保资源被释放
-            try {
-                if (rs != null) rs.close();
-                if (stmt != null) stmt.close();
-                if (profileRs != null) profileRs.close();
-                if (profileStmt != null) profileStmt.close();
-                if (conn != null) conn.close();
-            } catch (SQLException e) {
-                getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 关闭天坑乱斗数据库资源时出错: " + e.getMessage());
-            }
-        }
-        
-        return thepitStats;
+    /**
+
+     * 从天坑乱斗数据库获取统计数据
+
+     */
+
+    private Map<String, Object> getPlayerThypitStats(String playerName) {
+
+        Map<String, Object> thepitStats = new HashMap<>();
+
+        Connection conn = null;
+
+        PreparedStatement stmt = null;
+
+        ResultSet rs = null;
+
+        PreparedStatement profileStmt = null;
+
+        ResultSet profileRs = null;
+
+        
+
+        try {
+
+            conn = createDatabaseConnection("thepit");
+
+            // 查询ThePitStats表获取统计数据
+
+            String query = "SELECT KILLS, DEATHS, ASSISTS, DAMAGE_DEALT, DAMAGE_TAKEN FROM ThePitStats WHERE Player = ?";
+
+            stmt = conn.prepareStatement(query);
+
+            stmt.setString(1, playerName);
+
+            rs = stmt.executeQuery();
+
+            
+
+            if (rs.next()) {
+
+                thepitStats.put("kills", rs.getInt("KILLS"));
+
+                thepitStats.put("deaths", rs.getInt("DEATHS"));
+
+                thepitStats.put("assists", rs.getInt("ASSISTS"));
+
+                thepitStats.put("damage_dealt", rs.getInt("DAMAGE_DEALT"));
+
+                thepitStats.put("damage_taken", rs.getInt("DAMAGE_TAKEN"));
+
+            } else {
+
+                // 如果没有找到记录，设置默认值
+
+                thepitStats.put("kills", 0);
+
+                thepitStats.put("deaths", 0);
+
+                thepitStats.put("assists", 0);
+
+                thepitStats.put("damage_dealt", 0);
+
+                thepitStats.put("damage_taken", 0);
+
+            }
+
+            
+
+            // 查询ThePitProfiles表获取等级信息
+
+            String profileQuery = "SELECT Level FROM ThePitProfiles WHERE Player = ?";
+
+            profileStmt = conn.prepareStatement(profileQuery);
+
+            profileStmt.setString(1, playerName);
+
+            profileRs = profileStmt.executeQuery();
+
+            
+
+            if (profileRs.next()) {
+
+                thepitStats.put("level", profileRs.getInt("Level"));
+
+            } else {
+
+                thepitStats.put("level", 1);
+
+            }
+
+        } catch (Exception e) {
+
+            getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 查询天坑乱斗数据时出错: " + e.getMessage());
+
+        } finally {
+
+            // 确保资源被释放
+
+            try {
+
+                if (rs != null) rs.close();
+
+                if (stmt != null) stmt.close();
+
+                if (profileRs != null) profileRs.close();
+
+                if (profileStmt != null) profileStmt.close();
+
+                if (conn != null) conn.close();
+
+            } catch (SQLException e) {
+
+                getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 关闭天坑乱斗数据库资源时出错: " + e.getMessage());
+
+            }
+
+        }
+
+        
+
+        return thepitStats;
+
     }
 
     @EventHandler
@@ -615,17 +857,28 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         // 创建个人档案GUI - 二次元风格
         Inventory profileGUI = Bukkit.createInventory(null, 54, ChatColor.LIGHT_PURPLE + "✿ " + ChatColor.BOLD + "个人档案" + ChatColor.LIGHT_PURPLE + " ✿");
         
-        // 获取玩家名称
-        String playerName = p.getName();
-        
-        // 从数据库获取玩家信息 (实时获取最新数据)
-        Map<String, Object> authInfo = getPlayerAuthInfo(playerName);
-        Map<String, Object> levelInfo = getPlayerLevelInfo(playerName);
-        Map<String, Object> bedwarsStats = getPlayerBedwarsStats(playerName);
-        Map<String, Object> thepitStats = getPlayerThypitStats(playerName);
-        
-        // 实时获取权限组和称号 (确保使用最新数据)
-        String group = getPlayerGroup(p);
+        // 获取玩家名称
+
+        String playerName = p.getName();
+
+        
+
+        // 从数据库获取玩家信息 (实时获取最新数据)
+
+        Map<String, Object> authInfo = getPlayerAuthInfo(playerName);
+
+        Map<String, Object> levelInfo = getPlayerLevelInfo(playerName);
+
+        Map<String, Object> bedwarsStats = getPlayerBedwarsStats(playerName);
+
+        Map<String, Object> thepitStats = getPlayerThypitStats(playerName);
+
+        
+
+        // 实时获取权限组和称号 (确保使用最新数据)
+
+        String group = getPlayerGroup(p);
+
         String prefix = getPlayerPrefix(p);
         
         // 获取Authme信息
@@ -870,29 +1123,52 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         e.setCancelled(true);
     }
     
-    private void handleProfileGUIInteraction(InventoryClickEvent e) {
-        e.setCancelled(true); // 防止玩家拿取物品
-        Player player = (Player) e.getWhoClicked();
-        ItemStack clickedItem = e.getCurrentItem();
-        
-        // 获取玩家数据用于显示 (实时获取最新数据)
-        String playerName = player.getName();
-        Map<String, Object> authInfo = getPlayerAuthInfo(playerName);
-        long regDate = (Long) authInfo.getOrDefault("regdate", 0L);
-        String regDateStr = regDate > 0 ? new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(regDate)) : "未知";
-        String email = (String) authInfo.getOrDefault("email", "未设置");
-        
-        // 获取等级信息 (实时获取最新数据)
-        Map<String, Object> levelInfo = getPlayerLevelInfo(playerName);
-        int level = (Integer) levelInfo.getOrDefault("level", 1);
-        int experience = (Integer) levelInfo.getOrDefault("experience", 0);
-        
-        // 获取Bedwars统计信息 (实时获取最新数据)
-        Map<String, Object> bedwarsStats = getPlayerBedwarsStats(playerName);
-        int kills = (Integer) bedwarsStats.getOrDefault("kills", 0);
-        int wins = (Integer) bedwarsStats.getOrDefault("wins", 0);
-        int score = (Integer) bedwarsStats.getOrDefault("score", 0);
-        int loses = (Integer) bedwarsStats.getOrDefault("loses", 0);
+    private void handleProfileGUIInteraction(InventoryClickEvent e) {
+
+        e.setCancelled(true); // 防止玩家拿取物品
+
+        Player player = (Player) e.getWhoClicked();
+
+        ItemStack clickedItem = e.getCurrentItem();
+
+        
+
+        // 获取玩家数据用于显示 (实时获取最新数据)
+
+        String playerName = player.getName();
+
+        Map<String, Object> authInfo = getPlayerAuthInfo(playerName);
+
+        long regDate = (Long) authInfo.getOrDefault("regdate", 0L);
+
+        String regDateStr = regDate > 0 ? new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(regDate)) : "未知";
+
+        String email = (String) authInfo.getOrDefault("email", "未设置");
+
+        
+
+        // 获取等级信息 (实时获取最新数据)
+
+        Map<String, Object> levelInfo = getPlayerLevelInfo(playerName);
+
+        int level = (Integer) levelInfo.getOrDefault("level", 1);
+
+        int experience = (Integer) levelInfo.getOrDefault("experience", 0);
+
+        
+
+        // 获取Bedwars统计信息 (实时获取最新数据)
+
+        Map<String, Object> bedwarsStats = getPlayerBedwarsStats(playerName);
+
+        int kills = (Integer) bedwarsStats.getOrDefault("kills", 0);
+
+        int wins = (Integer) bedwarsStats.getOrDefault("wins", 0);
+
+        int score = (Integer) bedwarsStats.getOrDefault("score", 0);
+
+        int loses = (Integer) bedwarsStats.getOrDefault("loses", 0);
+
         int deaths = (Integer) bedwarsStats.getOrDefault("deaths", 0);
         
         // 如果点击的是空槽位或装饰性物品，则不处理
@@ -963,14 +1239,22 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         
         
         
-        // 如果点击的是天坑乱斗统计 - 二次元风格
-        Material diamondSwordMat = Material.matchMaterial("DIAMOND_SWORD");
-        if ((diamondSwordMat != null && clickedItem.getType() == diamondSwordMat) || clickedItem.getType() == Material.DIAMOND_SWORD) {
-            // 实时获取天坑乱斗统计信息
-            Map<String, Object> thepitStats = getPlayerThypitStats(playerName);
-            int pitKills = (Integer) thepitStats.getOrDefault("kills", 0);
-            int pitDeaths = (Integer) thepitStats.getOrDefault("deaths", 0);
-            int pitAssists = (Integer) thepitStats.getOrDefault("assists", 0);
+        // 如果点击的是天坑乱斗统计 - 二次元风格
+
+        Material diamondSwordMat = Material.matchMaterial("DIAMOND_SWORD");
+
+        if ((diamondSwordMat != null && clickedItem.getType() == diamondSwordMat) || clickedItem.getType() == Material.DIAMOND_SWORD) {
+
+            // 实时获取天坑乱斗统计信息
+
+            Map<String, Object> thepitStats = getPlayerThypitStats(playerName);
+
+            int pitKills = (Integer) thepitStats.getOrDefault("kills", 0);
+
+            int pitDeaths = (Integer) thepitStats.getOrDefault("deaths", 0);
+
+            int pitAssists = (Integer) thepitStats.getOrDefault("assists", 0);
+
             int pitLevel = (Integer) thepitStats.getOrDefault("level", 1);
             
             player.sendMessage(ChatColor.GOLD + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
