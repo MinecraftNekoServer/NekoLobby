@@ -897,31 +897,48 @@ public final class NekoLobby extends JavaPlugin implements Listener {
                 e.setCancelled(true);
                 
                 // 设置冷却时间
-
                 invisibilityCooldown.put(p, currentTime);
-
+                return;
             }
 
             
 
-            // 处理权益购买/充值物品
-
-            Material emeraldMat = Material.matchMaterial("EMERALD");
-
-            if ((emeraldMat != null && item.getType() == emeraldMat) || item.getType() == Material.EMERALD) {
-
-                if (p.getInventory().getHeldItemSlot() == 8) { // 第九个格子（索引8）
-
-                    // 打开权益购买/充值界面
-
-                    openRechargeGUI(p);
-
-                    e.setCancelled(true);
-
-                    return;
-
-                }
-
+            // 处理权益购买/充值物品
+
+
+
+            Material emeraldMat = Material.matchMaterial("EMERALD");
+
+
+
+            if ((emeraldMat != null && item.getType() == emeraldMat) || item.getType() == Material.EMERALD) {
+
+
+
+                if (p.getInventory().getHeldItemSlot() == 8) { // 第九个格子（索引8）
+
+
+
+                    // 打开权益购买/充值界面
+
+
+
+                    openRechargeGUI(p);
+
+
+
+                    e.setCancelled(true);
+
+
+
+                    return;
+
+
+
+                }
+
+
+
             }
 
         }
@@ -1207,14 +1224,26 @@ public final class NekoLobby extends JavaPlugin implements Listener {
     @EventHandler
     public void onInventoryClick(InventoryClickEvent e) {
         Player player = (Player) e.getWhoClicked();
+        // 添加调试日志
+        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] Inventory clicked: " + e.getView().getTitle());
+        
         // 如果玩家是创造模式，则允许移动物品
         if (player.getGameMode().name().equals("CREATIVE")) {
             return;
         }
         // 检查是否是个人档案GUI，如果是则允许交互
-        if (e.getView().getTitle().equals(ChatColor.LIGHT_PURPLE + "✿ " + ChatColor.BOLD + "个人档案" + ChatColor.LIGHT_PURPLE + " ✿")) {
+        String profileTitle = "个人档案";
+        if (e.getView().getTitle().contains(profileTitle)) {
             // 处理个人档案GUI中的交互
             handleProfileGUIInteraction(e);
+            return;
+        }
+        
+        // 检查是否是权益购买GUI，如果是则允许交互
+        String rechargeTitle = "权益购买/充值中心";
+        if (e.getView().getTitle().contains(rechargeTitle)) {
+            // 处理权益购买GUI中的交互
+            handleRechargeGUIInteraction(e);
             return;
         }
         e.setCancelled(true);
@@ -1384,25 +1413,218 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
         }
 
-        
+    }
 
-        
 
-        
 
-        
+    /**
+
+     * 处理权益购买GUI中的点击事件
+
+     */
+
+    private void handleRechargeGUIInteraction(InventoryClickEvent e) {
+
+        e.setCancelled(true); // 防止玩家拿取物品
+
+
+
+        Player player = (Player) e.getWhoClicked();
+
+        ItemStack clickedItem = e.getCurrentItem();
+
+
+
+        // 获取玩家名称
+
+        String playerName = player.getName();
+
+        // 从数据库获取玩家信息
+
+        Map<String, Object> levelInfo = getPlayerLevelInfo(playerName);
+
+        int catFood = (Integer) levelInfo.getOrDefault("cat_food", 0);
+
+
+
+        // 如果点击的是空槽位或装饰性物品，则不处理
+
+        Material glassPaneMat = Material.matchMaterial("STAINED_GLASS_PANE");
+
+        boolean isGlassPane = glassPaneMat != null ? 
+
+            clickedItem.getType() == glassPaneMat : 
+
+            clickedItem.getType() == Material.GRAY_STAINED_GLASS_PANE || 
+
+            clickedItem.getType() == Material.BLUE_STAINED_GLASS_PANE ||
+
+            clickedItem.getType() == Material.PINK_STAINED_GLASS_PANE ||
+
+            clickedItem.getType() == Material.MAGENTA_STAINED_GLASS_PANE ||
+
+            clickedItem.getType() == Material.WHITE_STAINED_GLASS_PANE;
+
+            
+
+        if (clickedItem == null || clickedItem.getType() == Material.AIR || isGlassPane) {
+
+            return;
+
+        }
+
+
+
+        // 如果点击的是VIP权益选项
+
+        Material diamondMat = Material.matchMaterial("DIAMOND");
+
+        if ((diamondMat != null && clickedItem.getType() == diamondMat) || clickedItem.getType() == Material.DIAMOND) {
+
+            // 检查玩家是否有足够的猫粮
+
+            if (catFood < 300) {
+
+                player.sendMessage(ChatColor.RED + "猫粮不足！购买VIP权益需要300猫粮。");
+
+                player.closeInventory(); // 关闭GUI
+
+                return;
+
+            }
+
+
+
+            // 扣除猫粮
+
+            deductCatFood(player, 300);
+
+            // 设置玩家VIP权限组
+
+            setPlayerVipGroup(player);
+
+            player.sendMessage(ChatColor.GREEN + "VIP权益购买成功！");
+
+            player.closeInventory(); // 关闭GUI
+
+            return;
+
+        }
+
+
+
+        // 如果点击的是钻石权益选项
+
+        Material diamondBlockMat = Material.matchMaterial("DIAMOND_BLOCK");
+
+        if ((diamondBlockMat != null && clickedItem.getType() == diamondBlockMat) || clickedItem.getType() == Material.DIAMOND_BLOCK) {
+
+            // 检查玩家是否有足够的猫粮
+
+            if (catFood < 500) {
+
+                player.sendMessage(ChatColor.RED + "猫粮不足！购买钻石权益需要500猫粮。");
+
+                player.closeInventory(); // 关闭GUI
+
+                return;
+
+            }
+
+
+
+            // 扣除猫粮
+
+            deductCatFood(player, 500);
+
+            // 设置玩家VIP权限组（钻石权益，可延长更多时间或有其他特权）
+
+            setPlayerVipGroup(player);
+
+            player.sendMessage(ChatColor.GREEN + "钻石权益购买成功！");
+
+            player.closeInventory(); // 关闭GUI
+
+            return;
+
+        }
+
+
+
+        // 如果点击的是绿宝石权益选项
+
+        Material emeraldMat = Material.matchMaterial("EMERALD");
+
+        if ((emeraldMat != null && clickedItem.getType() == emeraldMat) || clickedItem.getType() == Material.EMERALD) {
+
+            // 检查玩家是否有足够的猫粮
+
+            if (catFood < 800) {
+
+                player.sendMessage(ChatColor.RED + "猫粮不足！购买绿宝石权益需要800猫粮。");
+
+                player.closeInventory(); // 关闭GUI
+
+                return;
+
+            }
+
+
+
+            // 扣除猫粮
+
+            deductCatFood(player, 800);
+
+            // 设置玩家VIP权限组（绿宝石权益，可延长更多时间或有其他特权）
+
+            setPlayerVipGroup(player);
+
+            player.sendMessage(ChatColor.GREEN + "绿宝石权益购买成功！");
+
+            player.closeInventory(); // 关闭GUI
+
+            return;
+
+        }
+
+
+
+        // 如果点击的是玩家信息头颅，刷新GUI
+
+        Material playerHeadMat = Material.matchMaterial("SKULL_ITEM");
+
+        if ((playerHeadMat != null && clickedItem.getType() == playerHeadMat) || clickedItem.getType() == Material.PLAYER_HEAD) {
+
+            // 重新打开GUI以刷新信息
+
+            openRechargeGUI(player);
+
+            return;
+
+        }
 
     }
 
+
+
     @EventHandler
+
     public void onPlayerQuit(PlayerQuitEvent e) {
+
         Player player = e.getPlayer();
+
         // 清除玩家数据
+
         lastSpacePress.remove(player);
+
         hiddenPlayers.remove(player);
+
         lastLocation.remove(player); // 清除玩家上一个位置数据
+
         invisibilityCooldown.remove(player); // 清除冷却时间数据
+
         e.setQuitMessage(null);
+
     }
     
     // 检查玩家是否在活动范围内
@@ -1906,124 +2128,244 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
             w.setThundering(false);
 
-        }
-
-    }
-
-    /**
-     * 打开权益购买/充值GUI界面
-     */
-    private void openRechargeGUI(Player p) {
-        // 创建权益购买/充值GUI界面
-        Inventory rechargeGUI = Bukkit.createInventory(null, 54, ChatColor.AQUA + "✦ " + ChatColor.BOLD + "权益购买/充值中心" + ChatColor.AQUA + " ✦");
-        
-        // 获取玩家名称
-        String playerName = p.getName();
-        // 从数据库获取玩家信息
-        Map<String, Object> levelInfo = getPlayerLevelInfo(playerName);
-        int catFood = (Integer) levelInfo.getOrDefault("cat_food", 0);
-        
-        // 装饰性玻璃板 - 蓝色边框
-        Material blueGlassMat = Material.matchMaterial("STAINED_GLASS_PANE");
-        ItemStack blueGlassPane = blueGlassMat != null ? 
-            new ItemStack(blueGlassMat, 1, (short) 3) : 
-            new ItemStack(Material.BLUE_STAINED_GLASS_PANE, 1);
-        ItemMeta blueGlassMeta = blueGlassPane.getItemMeta();
-        blueGlassMeta.setDisplayName(ChatColor.BLUE + "权益中心");
-        blueGlassPane.setItemMeta(blueGlassMeta);
-        
-        // 装饰性玻璃板 - 青色背景
-        Material cyanGlassMat = Material.matchMaterial("STAINED_GLASS_PANE");
-        ItemStack cyanGlassPane = cyanGlassMat != null ? 
-            new ItemStack(cyanGlassMat, 1, (short) 9) : 
-            new ItemStack(Material.CYAN_STAINED_GLASS_PANE, 1);
-        ItemMeta cyanGlassMeta = cyanGlassPane.getItemMeta();
-        cyanGlassMeta.setDisplayName(ChatColor.AQUA + " ");
-        cyanGlassPane.setItemMeta(cyanGlassMeta);
-        
-        // 填充背景
-        for (int i = 0; i < 54; i++) {
-            rechargeGUI.setItem(i, cyanGlassPane.clone());
-        }
-        
-        // 设置边框
-        int[] borderSlots = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 17, 18, 26, 27, 35, 36, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53};
-        for (int slot : borderSlots) {
-            rechargeGUI.setItem(slot, blueGlassPane.clone());
-        }
-        
-        // VIP权益选项
-        Material diamondMat = Material.matchMaterial("DIAMOND");
-        ItemStack vipItem = diamondMat != null ? 
-            new ItemStack(diamondMat) : 
-            new ItemStack(Material.DIAMOND);
-        ItemMeta vipMeta = vipItem.getItemMeta();
-        vipMeta.setDisplayName(ChatColor.GOLD + "✦ " + ChatColor.BOLD + "VIP权益" + ChatColor.GOLD + " ✦");
-        List<String> vipLore = new ArrayList<>();
-        vipLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "300猫粮" + ChatColor.WHITE + " ✿");
-        vipLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
-        vipLore.add("");
-        vipLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击购买VIP权限" + ChatColor.YELLOW + " ❁");
-        vipMeta.setLore(vipLore);
-        vipItem.setItemMeta(vipMeta);
-        rechargeGUI.setItem(20, vipItem);
-        
-        // 钻石权益选项
-        Material diamondBlockMat = Material.matchMaterial("DIAMOND_BLOCK");
-        ItemStack diamondBlockItem = diamondBlockMat != null ? 
-            new ItemStack(diamondBlockMat) : 
-            new ItemStack(Material.DIAMOND_BLOCK);
-        ItemMeta diamondBlockMeta = diamondBlockItem.getItemMeta();
-        diamondBlockMeta.setDisplayName(ChatColor.AQUA + "✦ " + ChatColor.BOLD + "钻石权益" + ChatColor.AQUA + " ✦");
-        List<String> diamondBlockLore = new ArrayList<>();
-        diamondBlockLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "500猫粮" + ChatColor.WHITE + " ✿");
-        diamondBlockLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "三个月" + ChatColor.WHITE + " ✿");
-        diamondBlockLore.add("");
-        diamondBlockLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击购买钻石权益" + ChatColor.YELLOW + " ❁");
-        diamondBlockMeta.setLore(diamondBlockLore);
-        diamondBlockItem.setItemMeta(diamondBlockMeta);
-        rechargeGUI.setItem(22, diamondBlockItem);
-        
-        // 绿宝石权益选项
-        Material emeraldMat = Material.matchMaterial("EMERALD");
-        ItemStack emeraldItem = emeraldMat != null ? 
-            new ItemStack(emeraldMat) : 
-            new ItemStack(Material.EMERALD);
-        ItemMeta emeraldMeta = emeraldItem.getItemMeta();
-        emeraldMeta.setDisplayName(ChatColor.GREEN + "✦ " + ChatColor.BOLD + "绿宝石权益" + ChatColor.GREEN + " ✦");
-        List<String> emeraldLore = new ArrayList<>();
-        emeraldLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "800猫粮" + ChatColor.WHITE + " ✿");
-        emeraldLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "六个月" + ChatColor.WHITE + " ✿");
-        emeraldLore.add("");
-        emeraldLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击购买绿宝石权益" + ChatColor.YELLOW + " ❁");
-        emeraldMeta.setLore(emeraldLore);
-        emeraldItem.setItemMeta(emeraldItem.clone().getItemMeta());
-        rechargeGUI.setItem(24, emeraldItem);
-        
-        // 玩家信息显示
-        Material playerHeadMat = Material.matchMaterial("SKULL_ITEM");
-        ItemStack playerHead = playerHeadMat != null ? 
-            new ItemStack(playerHeadMat, 1, (short) 3) : 
-            new ItemStack(Material.PLAYER_HEAD, 1);
-        SkullMeta headMeta = (SkullMeta) playerHead.getItemMeta();
-        if (playerHeadMat != null) {
-            // 1.12.2及以下版本
-            headMeta.setOwner(p.getName());
-        } else {
-            // 1.13及以上版本
-            headMeta.setOwningPlayer(p);
-        }
-        headMeta.setDisplayName(ChatColor.LIGHT_PURPLE + "★ " + ChatColor.BOLD + "玩家信息" + ChatColor.LIGHT_PURPLE + " ★");
-        List<String> headLore = new ArrayList<>();
-        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "玩家: " + ChatColor.YELLOW + p.getName() + ChatColor.WHITE + " ✿");
-        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "当前猫粮: " + ChatColor.LIGHT_PURPLE + catFood + ChatColor.WHITE + " ✿");
-        headLore.add("");
-        headLore.add(ChatColor.LIGHT_PURPLE + "❀ " + ChatColor.BOLD + "点击刷新信息" + ChatColor.LIGHT_PURPLE + " ❀");
-        headMeta.setLore(headLore);
-        playerHead.setItemMeta(headMeta);
-        rechargeGUI.setItem(49, playerHead);
-        
-        // 打开GUI
-        p.openInventory(rechargeGUI);
-    }
+        }
+
+
+
+    }
+
+
+
+    /**
+
+     * 打开权益购买/充值GUI界面
+
+     */
+
+    private void openRechargeGUI(Player p) {
+
+        // 创建权益购买/充值GUI界面
+
+        Inventory rechargeGUI = Bukkit.createInventory(null, 54, ChatColor.AQUA + "✦ " + ChatColor.BOLD + "权益购买/充值中心" + ChatColor.AQUA + " ✦");
+
+        
+
+        // 获取玩家名称
+
+        String playerName = p.getName();
+
+        // 从数据库获取玩家信息
+
+        Map<String, Object> levelInfo = getPlayerLevelInfo(playerName);
+
+        int catFood = (Integer) levelInfo.getOrDefault("cat_food", 0);
+
+        
+
+        // 装饰性玻璃板 - 蓝色边框
+
+        Material blueGlassMat = Material.matchMaterial("STAINED_GLASS_PANE");
+
+        ItemStack blueGlassPane = blueGlassMat != null ? 
+
+            new ItemStack(blueGlassMat, 1, (short) 3) : 
+
+            new ItemStack(Material.BLUE_STAINED_GLASS_PANE, 1);
+
+        ItemMeta blueGlassMeta = blueGlassPane.getItemMeta();
+
+        blueGlassMeta.setDisplayName(ChatColor.BLUE + "权益中心");
+
+        blueGlassPane.setItemMeta(blueGlassMeta);
+
+        
+
+        // 装饰性玻璃板 - 青色背景
+
+        Material cyanGlassMat = Material.matchMaterial("STAINED_GLASS_PANE");
+
+        ItemStack cyanGlassPane = cyanGlassMat != null ? 
+
+            new ItemStack(cyanGlassMat, 1, (short) 9) : 
+
+            new ItemStack(Material.CYAN_STAINED_GLASS_PANE, 1);
+
+        ItemMeta cyanGlassMeta = cyanGlassPane.getItemMeta();
+
+        cyanGlassMeta.setDisplayName(ChatColor.AQUA + " ");
+
+        cyanGlassPane.setItemMeta(cyanGlassMeta);
+
+        
+
+        // 填充背景
+
+        for (int i = 0; i < 54; i++) {
+
+            rechargeGUI.setItem(i, cyanGlassPane.clone());
+
+        }
+
+        
+
+        // 设置边框
+
+        int[] borderSlots = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 17, 18, 26, 27, 35, 36, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53};
+
+        for (int slot : borderSlots) {
+
+            rechargeGUI.setItem(slot, blueGlassPane.clone());
+
+        }
+
+        
+
+        // VIP权益选项
+
+        Material diamondMat = Material.matchMaterial("DIAMOND");
+
+        ItemStack vipItem = diamondMat != null ? 
+
+            new ItemStack(diamondMat) : 
+
+            new ItemStack(Material.DIAMOND);
+
+        ItemMeta vipMeta = vipItem.getItemMeta();
+
+        vipMeta.setDisplayName(ChatColor.GOLD + "✦ " + ChatColor.BOLD + "VIP权益" + ChatColor.GOLD + " ✦");
+
+        List<String> vipLore = new ArrayList<>();
+
+        vipLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "300猫粮" + ChatColor.WHITE + " ✿");
+
+        vipLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
+
+        vipLore.add("");
+
+        vipLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击购买VIP权限" + ChatColor.YELLOW + " ❁");
+
+        vipMeta.setLore(vipLore);
+
+        vipItem.setItemMeta(vipMeta);
+
+        rechargeGUI.setItem(20, vipItem);
+
+        
+
+        // 钻石权益选项
+
+        Material diamondBlockMat = Material.matchMaterial("DIAMOND_BLOCK");
+
+        ItemStack diamondBlockItem = diamondBlockMat != null ? 
+
+            new ItemStack(diamondBlockMat) : 
+
+            new ItemStack(Material.DIAMOND_BLOCK);
+
+        ItemMeta diamondBlockMeta = diamondBlockItem.getItemMeta();
+
+        diamondBlockMeta.setDisplayName(ChatColor.AQUA + "✦ " + ChatColor.BOLD + "钻石权益" + ChatColor.AQUA + " ✦");
+
+        List<String> diamondBlockLore = new ArrayList<>();
+
+        diamondBlockLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "500猫粮" + ChatColor.WHITE + " ✿");
+
+        diamondBlockLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "三个月" + ChatColor.WHITE + " ✿");
+
+        diamondBlockLore.add("");
+
+        diamondBlockLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击购买钻石权益" + ChatColor.YELLOW + " ❁");
+
+        diamondBlockMeta.setLore(diamondBlockLore);
+
+        diamondBlockItem.setItemMeta(diamondBlockMeta);
+
+        rechargeGUI.setItem(22, diamondBlockItem);
+
+        
+
+        // 绿宝石权益选项
+
+        Material emeraldMat = Material.matchMaterial("EMERALD");
+
+        ItemStack emeraldItem = emeraldMat != null ? 
+
+            new ItemStack(emeraldMat) : 
+
+            new ItemStack(Material.EMERALD);
+
+        ItemMeta emeraldMeta = emeraldItem.getItemMeta();
+
+        emeraldMeta.setDisplayName(ChatColor.GREEN + "✦ " + ChatColor.BOLD + "绿宝石权益" + ChatColor.GREEN + " ✦");
+
+        List<String> emeraldLore = new ArrayList<>();
+
+        emeraldLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "800猫粮" + ChatColor.WHITE + " ✿");
+
+        emeraldLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "六个月" + ChatColor.WHITE + " ✿");
+
+        emeraldLore.add("");
+
+        emeraldLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击购买绿宝石权益" + ChatColor.YELLOW + " ❁");
+
+        emeraldMeta.setLore(emeraldLore);
+
+        emeraldItem.setItemMeta(emeraldItem.clone().getItemMeta());
+
+        rechargeGUI.setItem(24, emeraldItem);
+
+        
+
+        // 玩家信息显示
+
+        Material playerHeadMat = Material.matchMaterial("SKULL_ITEM");
+
+        ItemStack playerHead = playerHeadMat != null ? 
+
+            new ItemStack(playerHeadMat, 1, (short) 3) : 
+
+            new ItemStack(Material.PLAYER_HEAD, 1);
+
+        SkullMeta headMeta = (SkullMeta) playerHead.getItemMeta();
+
+        if (playerHeadMat != null) {
+
+            // 1.12.2及以下版本
+
+            headMeta.setOwner(p.getName());
+
+        } else {
+
+            // 1.13及以上版本
+
+            headMeta.setOwningPlayer(p);
+
+        }
+
+        headMeta.setDisplayName(ChatColor.LIGHT_PURPLE + "★ " + ChatColor.BOLD + "玩家信息" + ChatColor.LIGHT_PURPLE + " ★");
+
+        List<String> headLore = new ArrayList<>();
+
+        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "玩家: " + ChatColor.YELLOW + p.getName() + ChatColor.WHITE + " ✿");
+
+        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "当前猫粮: " + ChatColor.LIGHT_PURPLE + catFood + ChatColor.WHITE + " ✿");
+
+        headLore.add("");
+
+        headLore.add(ChatColor.LIGHT_PURPLE + "❀ " + ChatColor.BOLD + "点击刷新信息" + ChatColor.LIGHT_PURPLE + " ❀");
+
+        headMeta.setLore(headLore);
+
+        playerHead.setItemMeta(headMeta);
+
+        rechargeGUI.setItem(49, playerHead);
+
+        
+
+        // 打开GUI
+
+        p.openInventory(rechargeGUI);
+
+    }
+
 }
