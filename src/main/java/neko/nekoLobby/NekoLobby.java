@@ -1222,14 +1222,55 @@ public final class NekoLobby extends JavaPlugin implements Listener {
     }
 
     @EventHandler
+
     public void onInventoryClick(InventoryClickEvent e) {
-        Player player = (Player) e.getWhoClicked();
-        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 处理玩家 " + player.getName() + " 的个人档案GUI交互");
-        
-        ItemStack clickedItem = e.getCurrentItem();
-        
-        // 添加点击位置调试信息
+
+        Player player = (Player) e.getWhoClicked();
+
+        ItemStack clickedItem = e.getCurrentItem();
+
+        
+
+        // 检查是否点击了空物品
+
+        if (clickedItem == null || clickedItem.getType() == Material.AIR) {
+
+            return;
+
+        }
+
+        
+
+        // 获取GUI标题（兼容1.12.2版本）
+
+        String inventoryTitle = getName();
+
+        
+
+        // 添加调试信息
+
+        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 玩家 " + player.getName() + " 点击了GUI: " + inventoryTitle);
+
         getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 玩家 " + player.getName() + " 点击了槽位 " + e.getSlot());
+
+        
+
+        // 根据GUI标题处理不同的GUI交互
+
+        if (inventoryTitle.contains("个人档案")) {
+
+            e.setCancelled(true); // 防止玩家拿取物品
+
+            handleProfileGUIInteraction(e);
+
+        } else if (inventoryTitle.contains("权益购买") || inventoryTitle.contains("充值中心")) {
+
+            e.setCancelled(true); // 防止玩家拿取物品
+
+            handleRechargeGUIInteraction(e);
+
+        }
+
     }
     
     private void handleProfileGUIInteraction(InventoryClickEvent e) {
@@ -1484,10 +1525,16 @@ public final class NekoLobby extends JavaPlugin implements Listener {
     }
 
     /**
+
      * 处理权益购买GUI中的点击事件
+
      */
 
-    private void handleRechargeGUIInteraction(InventoryClickEvent e) {
+
+
+    private void handleRechargeGUIInteractionOld(InventoryClickEvent e) {
+
+
 
         e.setCancelled(true); // 防止玩家拿取物品
 
@@ -1495,7 +1542,17 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
         Player player = (Player) e.getWhoClicked();
 
+        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 处理玩家 " + player.getName() + " 的权益购买GUI交互");
+
+        
+
         ItemStack clickedItem = e.getCurrentItem();
+
+        
+
+        // 添加点击位置调试信息
+
+        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 玩家 " + player.getName() + " 点击了槽位 " + e.getSlot());
 
 
 
@@ -1653,19 +1710,31 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
 
 
-        // 如果点击的是玩家信息头颅，刷新GUI
+        // 如果点击的是玩家信息头颅，刷新GUI（槽位49）
 
-        Material playerHeadMat = Material.matchMaterial("SKULL_ITEM");
+        if (e.getSlot() == 49) {
 
-        if ((playerHeadMat != null && clickedItem.getType() == playerHeadMat) || clickedItem.getType() == Material.PLAYER_HEAD) {
+            Material playerHeadMat = Material.matchMaterial("SKULL_ITEM");
 
-            // 重新打开GUI以刷新信息
+            if ((playerHeadMat != null && clickedItem.getType() == playerHeadMat) || clickedItem.getType() == Material.PLAYER_HEAD) {
 
-            openRechargeGUI(player);
+                getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 玩家 " + player.getName() + " 点击了玩家头颅项目");
 
-            return;
+                // 重新打开GUI以刷新信息
+
+                openRechargeGUI(player);
+
+                return;
+
+            }
 
         }
+
+
+
+        // 如果没有匹配任何项目，输出调试信息
+
+        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 玩家 " + player.getName() + " 点击了未知项目: " + clickedItem.getType().name() + " (槽位: " + e.getSlot() + ")");
 
     }
 
@@ -2430,6 +2499,224 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
         p.openInventory(rechargeGUI);
 
+
+
     }
+
+
+
+    /**
+
+     * 处理权益购买GUI中的点击事件（更新版本）
+
+     */
+
+
+
+    private void handleRechargeGUIInteraction(InventoryClickEvent e) {
+
+
+
+        e.setCancelled(true); // 防止玩家拿取物品
+
+
+
+        Player player = (Player) e.getWhoClicked();
+
+        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 玩家 " + player.getName() + " 点击了权益购买GUI");
+
+        
+
+        ItemStack clickedItem = e.getCurrentItem();
+
+        
+
+        // 添加点击位置调试信息
+
+        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 玩家 " + player.getName() + " 点击了槽位 " + e.getSlot());
+
+
+
+
+
+        // 获取玩家名称
+
+
+
+        String playerName = player.getName();
+
+
+
+        // 从数据库获取玩家信息
+
+
+
+        Map<String, Object> levelInfo = getPlayerLevelInfo(playerName);
+
+
+
+        int catFood = (Integer) levelInfo.getOrDefault("cat_food", 0);
+
+
+
+
+
+        // 如果点击的是空槽位或装饰性物品，则不处理
+
+
+
+        Material glassPaneMat = Material.matchMaterial("STAINED_GLASS_PANE");
+
+
+
+        boolean isGlassPane = glassPaneMat != null ? 
+
+
+
+            clickedItem.getType() == glassPaneMat : 
+
+
+
+            clickedItem.getType() == Material.GRAY_STAINED_GLASS_PANE || 
+
+
+
+            clickedItem.getType() == Material.BLUE_STAINED_GLASS_PANE ||
+
+
+
+            clickedItem.getType() == Material.PINK_STAINED_GLASS_PANE ||
+
+
+
+            clickedItem.getType() == Material.MAGENTA_STAINED_GLASS_PANE ||
+
+
+
+            clickedItem.getType() == Material.WHITE_STAINED_GLASS_PANE;
+
+
+
+            
+
+
+
+        if (clickedItem == null || clickedItem.getType() == Material.AIR || isGlassPane) {
+
+
+
+            return;
+
+
+
+        }
+
+
+
+
+
+
+
+        // 使用槽位检测来处理VIP权益购买（槽位20）
+
+
+
+        if (e.getSlot() == 20) { // VIP权益选项
+
+
+
+            // 检查玩家是否有足够的猫粮
+
+
+
+            if (catFood < 300) {
+
+
+
+                player.sendMessage(ChatColor.RED + "猫粮不足！购买VIP权益需要300猫粮。");
+
+
+
+                return;
+
+
+
+            }
+
+
+
+
+
+
+
+            // 扣除猫粮
+
+
+
+            deductCatFood(player, 300);
+
+
+
+            // 设置玩家VIP权限组
+
+
+
+            setPlayerVipGroup(player);
+
+
+
+            player.sendMessage(ChatColor.GREEN + "VIP权益购买成功！");
+
+
+
+            // 重新打开GUI以刷新信息
+
+
+
+            openRechargeGUI(player);
+
+
+
+            return;
+
+
+
+        }
+
+
+
+
+
+
+
+        // 如果点击的是玩家信息头颅，刷新GUI（槽位49）
+
+        if (e.getSlot() == 49) {
+
+            Material playerHeadMat = Material.matchMaterial("SKULL_ITEM");
+
+            if ((playerHeadMat != null && clickedItem.getType() == playerHeadMat) || clickedItem.getType() == Material.PLAYER_HEAD) {
+
+                getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 玩家 " + player.getName() + " 点击了玩家头颅项目");
+
+                // 重新打开GUI以刷新信息
+
+                openRechargeGUI(player);
+
+                return;
+
+            }
+
+        }
+
+
+
+        // 如果没有匹配任何项目，输出调试信息
+
+        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 玩家 " + player.getName() + " 点击了未知项目: " + clickedItem.getType().name() + " (槽位: " + e.getSlot() + ")");
+
+    }
+
+
 
 }
