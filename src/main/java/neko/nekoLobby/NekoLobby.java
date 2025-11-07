@@ -1224,16 +1224,19 @@ public final class NekoLobby extends JavaPlugin implements Listener {
     @EventHandler
     public void onInventoryClick(InventoryClickEvent e) {
         Player player = (Player) e.getWhoClicked();
-        // 添加调试日志
-        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] Inventory clicked: " + e.getView().getTitle());
         
         // 如果玩家是创造模式，则允许移动物品
         if (player.getGameMode().name().equals("CREATIVE")) {
             return;
         }
+        
+        // 获取Inventory的标题（兼容1.12.2版本）
+        String inventoryTitle = e.getView().getTitle();
+        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] Inventory clicked: " + inventoryTitle);
+        
         // 检查是否是个人档案GUI，如果是则允许交互
         String profileTitle = "个人档案";
-        if (e.getView().getTitle().contains(profileTitle)) {
+        if (inventoryTitle.contains(profileTitle)) {
             // 处理个人档案GUI中的交互
             handleProfileGUIInteraction(e);
             return;
@@ -1241,7 +1244,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         
         // 检查是否是权益购买GUI，如果是则允许交互
         String rechargeTitle = "权益购买/充值中心";
-        if (e.getView().getTitle().contains(rechargeTitle)) {
+        if (inventoryTitle.contains(rechargeTitle)) {
             // 处理权益购买GUI中的交互
             handleRechargeGUIInteraction(e);
             return;
