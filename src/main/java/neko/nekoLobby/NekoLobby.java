@@ -374,65 +374,39 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
     }
     
-    private Map<String, Object> getPlayerLevelInfo(String playerName) {
-
-        Map<String, Object> levelInfo = new HashMap<>();
-
-        Connection conn = null;
-
-        PreparedStatement stmt = null;
-
-        ResultSet rs = null;
-
-        
-
-        try {
-
-            conn = createDatabaseConnection("neko_level");
-
-            String query = "SELECT name, level, experience FROM player_levels WHERE name = ?";
-
-            stmt = conn.prepareStatement(query);
-
-            stmt.setString(1, playerName);
-
-            rs = stmt.executeQuery();
-
-            
-
-            if (rs.next()) {
-
-                levelInfo.put("name", rs.getString("name"));
-
-                levelInfo.put("level", rs.getInt("level"));
-
-                levelInfo.put("experience", rs.getInt("experience"));
-
-            }
-
-        } catch (SQLException e) {
-
-            getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 查询等级数据时出错: " + e.getMessage());
-
-        } finally {
-
-            // 确保资源被释放
-
-            try {
-
-                if (rs != null) rs.close();
-
-                if (stmt != null) stmt.close();
-
-                if (conn != null) conn.close();
-
-            } catch (SQLException e) {
-
-                getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 关闭等级数据库资源时出错: " + e.getMessage());
-            }
-        }
-
-        return levelInfo;
+    private Map<String, Object> getPlayerLevelInfo(String playerName) {
+        Map<String, Object> levelInfo = new HashMap<>();
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        
+        try {
+            conn = createDatabaseConnection("neko_level");
+            String query = "SELECT name, level, experience, cat_food FROM player_levels WHERE name = ?";
+            stmt = conn.prepareStatement(query);
+            stmt.setString(1, playerName);
+            rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                levelInfo.put("name", rs.getString("name"));
+                levelInfo.put("level", rs.getInt("level"));
+                levelInfo.put("experience", rs.getInt("experience"));
+                levelInfo.put("cat_food", rs.getInt("cat_food"));
+            }
+        } catch (SQLException e) {
+            getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 查询等级数据时出错: " + e.getMessage());
+        } finally {
+            // 确保资源被释放
+            try {
+                if (rs != null) rs.close();
+                if (stmt != null) stmt.close();
+                if (conn != null) conn.close();
+            } catch (SQLException e) {
+                getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 关闭等级数据库资源时出错: " + e.getMessage());
+            }
+        }
+        
+        return levelInfo;
     }
     /**
      * 从bw_stats_players表获取Bedwars统计数据
@@ -931,14 +905,15 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         }
         headMeta.setDisplayName(ChatColor.LIGHT_PURPLE + "★ " + ChatColor.BOLD + playerName + ChatColor.LIGHT_PURPLE + " ★");
         
-        // 添加玩家信息到Lore - 二次元风格
-        List<String> headLore = new ArrayList<>();
-        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "权限组: " + ChatColor.YELLOW + group + ChatColor.WHITE + " ✿");
-        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "称号: " + ChatColor.RESET + prefix + ChatColor.WHITE + " ✿");
-        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "等级: " + ChatColor.YELLOW + level + ChatColor.WHITE + " ✿");
-        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "最后登录: " + ChatColor.GREEN + lastLoginStr + ChatColor.WHITE + " ✿");
-        headLore.add("");
-        headLore.add(ChatColor.LIGHT_PURPLE + "❀ " + ChatColor.BOLD + "点击查看详情" + ChatColor.LIGHT_PURPLE + " ❀");
+        // 添加玩家信息到Lore - 二次元风格
+        List<String> headLore = new ArrayList<>();
+        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "权限组: " + ChatColor.YELLOW + group + ChatColor.WHITE + " ✿");
+        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "称号: " + ChatColor.RESET + prefix + ChatColor.WHITE + " ✿");
+        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "猫粮: " + ChatColor.LIGHT_PURPLE + (Integer) levelInfo.getOrDefault("cat_food", 0) + ChatColor.WHITE + " ✿");
+        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "等级: " + ChatColor.YELLOW + level + ChatColor.WHITE + " ✿");
+        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "最后登录: " + ChatColor.GREEN + lastLoginStr + ChatColor.WHITE + " ✿");
+        headLore.add("");
+        headLore.add(ChatColor.LIGHT_PURPLE + "❀ " + ChatColor.BOLD + "点击查看详情" + ChatColor.LIGHT_PURPLE + " ❀");
         headMeta.setLore(headLore);
         playerHead.setItemMeta(headMeta);
         
@@ -1010,15 +985,15 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         ItemStack levelItem = expBottleMat != null ? 
             new ItemStack(expBottleMat) : 
             new ItemStack(Material.EXPERIENCE_BOTTLE);
-        ItemMeta levelMeta = levelItem.getItemMeta();
-        levelMeta.setDisplayName(ChatColor.GREEN + "✧ " + ChatColor.BOLD + "等级信息" + ChatColor.GREEN + " ✧");
-        List<String> levelLore = new ArrayList<>();
-        levelLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "当前等级: " + ChatColor.LIGHT_PURPLE + level + ChatColor.WHITE + " ✿");
-        levelLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "经验值: " + ChatColor.LIGHT_PURPLE + experience + ChatColor.WHITE + " ✿");
-        levelLore.add("");
-        levelLore.add(ChatColor.AQUA + "❁ " + ChatColor.ITALIC + "经验值成长记录" + ChatColor.AQUA + " ❁");
-        levelMeta.setLore(levelLore);
-        levelItem.setItemMeta(levelMeta);
+        ItemMeta levelMeta = levelItem.getItemMeta();
+        levelMeta.setDisplayName(ChatColor.GREEN + "✧ " + ChatColor.BOLD + "等级信息" + ChatColor.GREEN + " ✧");
+        List<String> levelLore = new ArrayList<>();
+        levelLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "当前等级: " + ChatColor.LIGHT_PURPLE + level + ChatColor.WHITE + " ✿");
+        levelLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "经验值: " + ChatColor.LIGHT_PURPLE + experience + ChatColor.WHITE + " ✿");
+        levelLore.add("");
+        levelLore.add(ChatColor.AQUA + "❁ " + ChatColor.ITALIC + "经验值成长记录" + ChatColor.AQUA + " ❁");
+        levelMeta.setLore(levelLore);
+        levelItem.setItemMeta(levelMeta);
         profileGUI.setItem(24, levelItem);
         
         // Bedwars统计 - 二次元风格 (第三行左侧)
@@ -1210,16 +1185,16 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             return;
         }
         
-        // 如果点击的是等级信息 - 二次元风格
-        Material expBottleMat = Material.matchMaterial("EXP_BOTTLE");
-        if ((expBottleMat != null && clickedItem.getType() == expBottleMat) || clickedItem.getType() == Material.EXPERIENCE_BOTTLE) {
-            player.sendMessage(ChatColor.GREEN + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
-            player.sendMessage(ChatColor.LIGHT_PURPLE + "                   等级信息");
-            player.sendMessage(ChatColor.GREEN + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
-            player.sendMessage(ChatColor.YELLOW + "  ✿ 当前等级: " + ChatColor.WHITE + level);
-            player.sendMessage(ChatColor.YELLOW + "  ✿ 经验值: " + ChatColor.WHITE + experience);
-            player.sendMessage(ChatColor.GREEN + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
-            return;
+        // 如果点击的是等级信息 - 二次元风格
+        Material expBottleMat = Material.matchMaterial("EXP_BOTTLE");
+        if ((expBottleMat != null && clickedItem.getType() == expBottleMat) || clickedItem.getType() == Material.EXPERIENCE_BOTTLE) {
+            player.sendMessage(ChatColor.GREEN + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+            player.sendMessage(ChatColor.LIGHT_PURPLE + "                   等级信息");
+            player.sendMessage(ChatColor.GREEN + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+            player.sendMessage(ChatColor.YELLOW + "  ✿ 当前等级: " + ChatColor.WHITE + level);
+            player.sendMessage(ChatColor.YELLOW + "  ✿ 经验值: " + ChatColor.WHITE + experience);
+            player.sendMessage(ChatColor.GREEN + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+            return;
         }
         
         // 如果点击的是Bedwars统计 - 二次元风格
