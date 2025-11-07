@@ -52,6 +52,7 @@ import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.model.group.Group;
+import net.luckperms.api.node.types.InheritanceNode;
 
 // PlaceholderAPI
 import me.clip.placeholderapi.PlaceholderAPI;
@@ -374,39 +375,72 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
     }
     
-    private Map<String, Object> getPlayerLevelInfo(String playerName) {
-        Map<String, Object> levelInfo = new HashMap<>();
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-        
-        try {
-            conn = createDatabaseConnection("neko_level");
-            String query = "SELECT name, level, experience, cat_food FROM player_levels WHERE name = ?";
-            stmt = conn.prepareStatement(query);
-            stmt.setString(1, playerName);
-            rs = stmt.executeQuery();
-            
-            if (rs.next()) {
-                levelInfo.put("name", rs.getString("name"));
-                levelInfo.put("level", rs.getInt("level"));
-                levelInfo.put("experience", rs.getInt("experience"));
-                levelInfo.put("cat_food", rs.getInt("cat_food"));
-            }
-        } catch (SQLException e) {
-            getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 查询等级数据时出错: " + e.getMessage());
-        } finally {
-            // 确保资源被释放
-            try {
-                if (rs != null) rs.close();
-                if (stmt != null) stmt.close();
-                if (conn != null) conn.close();
-            } catch (SQLException e) {
-                getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 关闭等级数据库资源时出错: " + e.getMessage());
-            }
-        }
-        
-        return levelInfo;
+    private Map<String, Object> getPlayerLevelInfo(String playerName) {
+
+        Map<String, Object> levelInfo = new HashMap<>();
+
+        Connection conn = null;
+
+        PreparedStatement stmt = null;
+
+        ResultSet rs = null;
+
+        
+
+        try {
+
+            conn = createDatabaseConnection("neko_level");
+
+            String query = "SELECT name, level, experience, cat_food FROM player_levels WHERE name = ?";
+
+            stmt = conn.prepareStatement(query);
+
+            stmt.setString(1, playerName);
+
+            rs = stmt.executeQuery();
+
+            
+
+            if (rs.next()) {
+
+                levelInfo.put("name", rs.getString("name"));
+
+                levelInfo.put("level", rs.getInt("level"));
+
+                levelInfo.put("experience", rs.getInt("experience"));
+
+                levelInfo.put("cat_food", rs.getInt("cat_food"));
+
+            }
+
+        } catch (SQLException e) {
+
+            getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 查询等级数据时出错: " + e.getMessage());
+
+        } finally {
+
+            // 确保资源被释放
+
+            try {
+
+                if (rs != null) rs.close();
+
+                if (stmt != null) stmt.close();
+
+                if (conn != null) conn.close();
+
+            } catch (SQLException e) {
+
+                getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 关闭等级数据库资源时出错: " + e.getMessage());
+
+            }
+
+        }
+
+        
+
+        return levelInfo;
+
     }
     /**
      * 从bw_stats_players表获取Bedwars统计数据
@@ -723,17 +757,58 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         }
         
         // 黄绿色染料（隐身功能）
+
         Material dyeMat = Material.matchMaterial("INK_SACK");
+
         if (dyeMat != null) {
+
             ItemStack dye = new ItemStack(dyeMat, 1, (short) 10); // 黄绿色染料
+
             ItemMeta dyeMeta = dye.getItemMeta();
+
             dyeMeta.setDisplayName(ChatColor.GREEN + "隐藏玩家");
+
             dyeMeta.setLore(Collections.singletonList(ChatColor.GRAY + "右键切换玩家显示/隐藏"));
+
             dye.setItemMeta(dyeMeta);
+
             inv.setItem(7, dye);
+
         }
 
+
+        // 权益购买/充值（第九个格子，索引8）
+
+        Material emeraldMat = Material.matchMaterial("EMERALD");
+
+        ItemStack rechargeItem = emeraldMat != null ? 
+
+            new ItemStack(emeraldMat) : 
+
+            new ItemStack(Material.EMERALD);
+
+        ItemMeta rechargeMeta = rechargeItem.getItemMeta();
+
+        rechargeMeta.setDisplayName(ChatColor.AQUA + "✦ " + ChatColor.BOLD + "权益购买/充值" + ChatColor.AQUA + " ✦");
+
+        List<String> rechargeLore = new ArrayList<>();
+
+        rechargeLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "点击打开权益中心" + ChatColor.WHITE + " ✿");
+
+        rechargeLore.add("");
+
+        rechargeLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击购买/充值权益" + ChatColor.YELLOW + " ❁");
+
+        rechargeMeta.setLore(rechargeLore);
+
+        rechargeItem.setItemMeta(rechargeMeta);
+
+        inv.setItem(8, rechargeItem);
+
+
+
         event.setJoinMessage(null);
+
     }
 
     @EventHandler
@@ -822,9 +897,35 @@ public final class NekoLobby extends JavaPlugin implements Listener {
                 e.setCancelled(true);
                 
                 // 设置冷却时间
+
                 invisibilityCooldown.put(p, currentTime);
+
             }
+
+            
+
+            // 处理权益购买/充值物品
+
+            Material emeraldMat = Material.matchMaterial("EMERALD");
+
+            if ((emeraldMat != null && item.getType() == emeraldMat) || item.getType() == Material.EMERALD) {
+
+                if (p.getInventory().getHeldItemSlot() == 8) { // 第九个格子（索引8）
+
+                    // 打开权益购买/充值界面
+
+                    openRechargeGUI(p);
+
+                    e.setCancelled(true);
+
+                    return;
+
+                }
+
+            }
+
         }
+
     }
 
     private void openPlayerProfileGUI(Player p) {
@@ -905,15 +1006,24 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         }
         headMeta.setDisplayName(ChatColor.LIGHT_PURPLE + "★ " + ChatColor.BOLD + playerName + ChatColor.LIGHT_PURPLE + " ★");
         
-        // 添加玩家信息到Lore - 二次元风格
-        List<String> headLore = new ArrayList<>();
-        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "权限组: " + ChatColor.YELLOW + group + ChatColor.WHITE + " ✿");
-        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "称号: " + ChatColor.RESET + prefix + ChatColor.WHITE + " ✿");
-        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "猫粮: " + ChatColor.LIGHT_PURPLE + (Integer) levelInfo.getOrDefault("cat_food", 0) + ChatColor.WHITE + " ✿");
-        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "等级: " + ChatColor.YELLOW + level + ChatColor.WHITE + " ✿");
-        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "最后登录: " + ChatColor.GREEN + lastLoginStr + ChatColor.WHITE + " ✿");
-        headLore.add("");
-        headLore.add(ChatColor.LIGHT_PURPLE + "❀ " + ChatColor.BOLD + "点击查看详情" + ChatColor.LIGHT_PURPLE + " ❀");
+        // 添加玩家信息到Lore - 二次元风格
+
+        List<String> headLore = new ArrayList<>();
+
+        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "权限组: " + ChatColor.YELLOW + group + ChatColor.WHITE + " ✿");
+
+        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "称号: " + ChatColor.RESET + prefix + ChatColor.WHITE + " ✿");
+
+        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "猫粮: " + ChatColor.LIGHT_PURPLE + (Integer) levelInfo.getOrDefault("cat_food", 0) + ChatColor.WHITE + " ✿");
+
+        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "等级: " + ChatColor.YELLOW + level + ChatColor.WHITE + " ✿");
+
+        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "最后登录: " + ChatColor.GREEN + lastLoginStr + ChatColor.WHITE + " ✿");
+
+        headLore.add("");
+
+        headLore.add(ChatColor.LIGHT_PURPLE + "❀ " + ChatColor.BOLD + "点击查看详情" + ChatColor.LIGHT_PURPLE + " ❀");
+
         headMeta.setLore(headLore);
         playerHead.setItemMeta(headMeta);
         
@@ -985,15 +1095,24 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         ItemStack levelItem = expBottleMat != null ? 
             new ItemStack(expBottleMat) : 
             new ItemStack(Material.EXPERIENCE_BOTTLE);
-        ItemMeta levelMeta = levelItem.getItemMeta();
-        levelMeta.setDisplayName(ChatColor.GREEN + "✧ " + ChatColor.BOLD + "等级信息" + ChatColor.GREEN + " ✧");
-        List<String> levelLore = new ArrayList<>();
-        levelLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "当前等级: " + ChatColor.LIGHT_PURPLE + level + ChatColor.WHITE + " ✿");
-        levelLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "经验值: " + ChatColor.LIGHT_PURPLE + experience + ChatColor.WHITE + " ✿");
-        levelLore.add("");
-        levelLore.add(ChatColor.AQUA + "❁ " + ChatColor.ITALIC + "经验值成长记录" + ChatColor.AQUA + " ❁");
-        levelMeta.setLore(levelLore);
-        levelItem.setItemMeta(levelMeta);
+        ItemMeta levelMeta = levelItem.getItemMeta();
+
+        levelMeta.setDisplayName(ChatColor.GREEN + "✧ " + ChatColor.BOLD + "等级信息" + ChatColor.GREEN + " ✧");
+
+        List<String> levelLore = new ArrayList<>();
+
+        levelLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "当前等级: " + ChatColor.LIGHT_PURPLE + level + ChatColor.WHITE + " ✿");
+
+        levelLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "经验值: " + ChatColor.LIGHT_PURPLE + experience + ChatColor.WHITE + " ✿");
+
+        levelLore.add("");
+
+        levelLore.add(ChatColor.AQUA + "❁ " + ChatColor.ITALIC + "经验值成长记录" + ChatColor.AQUA + " ❁");
+
+        levelMeta.setLore(levelLore);
+
+        levelItem.setItemMeta(levelMeta);
+
         profileGUI.setItem(24, levelItem);
         
         // Bedwars统计 - 二次元风格 (第三行左侧)
@@ -1038,8 +1157,11 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         thepitItem.setItemMeta(thepitMeta);
         profileGUI.setItem(32, thepitItem);
         
+
         // 打开GUI
+
         p.openInventory(profileGUI);
+
     }
 
     private void togglePlayerVisibility(Player player, ItemStack dye) {
@@ -1185,16 +1307,26 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             return;
         }
         
-        // 如果点击的是等级信息 - 二次元风格
-        Material expBottleMat = Material.matchMaterial("EXP_BOTTLE");
-        if ((expBottleMat != null && clickedItem.getType() == expBottleMat) || clickedItem.getType() == Material.EXPERIENCE_BOTTLE) {
-            player.sendMessage(ChatColor.GREEN + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
-            player.sendMessage(ChatColor.LIGHT_PURPLE + "                   等级信息");
-            player.sendMessage(ChatColor.GREEN + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
-            player.sendMessage(ChatColor.YELLOW + "  ✿ 当前等级: " + ChatColor.WHITE + level);
-            player.sendMessage(ChatColor.YELLOW + "  ✿ 经验值: " + ChatColor.WHITE + experience);
-            player.sendMessage(ChatColor.GREEN + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
-            return;
+        // 如果点击的是等级信息 - 二次元风格
+
+        Material expBottleMat = Material.matchMaterial("EXP_BOTTLE");
+
+        if ((expBottleMat != null && clickedItem.getType() == expBottleMat) || clickedItem.getType() == Material.EXPERIENCE_BOTTLE) {
+
+            player.sendMessage(ChatColor.GREEN + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+
+            player.sendMessage(ChatColor.LIGHT_PURPLE + "                   等级信息");
+
+            player.sendMessage(ChatColor.GREEN + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+
+            player.sendMessage(ChatColor.YELLOW + "  ✿ 当前等级: " + ChatColor.WHITE + level);
+
+            player.sendMessage(ChatColor.YELLOW + "  ✿ 经验值: " + ChatColor.WHITE + experience);
+
+            player.sendMessage(ChatColor.GREEN + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+
+            return;
+
         }
         
         // 如果点击的是Bedwars统计 - 二次元风格
@@ -1233,17 +1365,33 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             int pitLevel = (Integer) thepitStats.getOrDefault("level", 1);
             
             player.sendMessage(ChatColor.GOLD + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+
             player.sendMessage(ChatColor.LIGHT_PURPLE + "                   天坑乱斗");
+
             player.sendMessage(ChatColor.GOLD + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+
             player.sendMessage(ChatColor.YELLOW + "  ✿ 等级: " + ChatColor.WHITE + pitLevel);
+
             player.sendMessage(ChatColor.YELLOW + "  ✿ 击杀数: " + ChatColor.WHITE + pitKills);
+
             player.sendMessage(ChatColor.YELLOW + "  ✿ 死亡数: " + ChatColor.WHITE + pitDeaths);
+
             player.sendMessage(ChatColor.YELLOW + "  ✿ 助攻数: " + ChatColor.WHITE + pitAssists);
+
             player.sendMessage(ChatColor.GOLD + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+
             return;
+
         }
+
         
+
         
+
+        
+
+        
+
     }
 
     @EventHandler
@@ -1435,13 +1583,447 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         e.setCancelled(true);
     }
 
-    private void lockTimeToDay() {
-        for (World w : getServer().getWorlds()) {
-            w.setGameRuleValue("doDaylightCycle", "false");
-            w.setGameRuleValue("doWeatherCycle", "false");
-            w.setTime(6000);
-            w.setStorm(false);
-            w.setThundering(false);
+    /**
+
+     * 扣除玩家猫粮
+
+     */
+
+    private void deductCatFood(Player player, int amount) {
+
+        Connection conn = null;
+
+        PreparedStatement stmt = null;
+
+        
+
+        try {
+
+            conn = createDatabaseConnection("neko_level");
+
+            String query = "UPDATE player_levels SET cat_food = cat_food - ? WHERE name = ?";
+
+            stmt = conn.prepareStatement(query);
+
+            stmt.setInt(1, amount);
+
+            stmt.setString(2, player.getName());
+
+            stmt.executeUpdate();
+
+        } catch (SQLException e) {
+
+            getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 扣除玩家猫粮时出错: " + e.getMessage());
+
+        } finally {
+
+            // 确保资源被释放
+
+            try {
+
+                if (stmt != null) stmt.close();
+
+                if (conn != null) conn.close();
+
+            } catch (SQLException e) {
+
+                getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 关闭数据库资源时出错: " + e.getMessage());
+
+            }
+
         }
+
     }
+
+    
+
+    /**
+
+     * 设置玩家VIP权限组
+
+     */
+
+    private void setPlayerVipGroup(Player player) {
+
+        if (luckPerms == null) {
+
+            player.sendMessage(ChatColor.RED + "权限系统未初始化，无法设置VIP权限组！");
+
+            return;
+
+        }
+
+        
+
+        try {
+
+            // 获取用户
+
+            User user = luckPerms.getUserManager().getUser(player.getUniqueId());
+
+            if (user == null) {
+
+                player.sendMessage(ChatColor.RED + "无法获取用户信息！");
+
+                return;
+
+            }
+
+            
+
+            // 创建继承节点（将用户添加到VIP组）
+
+            InheritanceNode node = InheritanceNode.builder("vip")
+
+                    .expiry(30, java.util.concurrent.TimeUnit.DAYS) // 设置30天有效期
+
+                    .build();
+
+            
+
+            // 构建修改任务并应用
+
+            luckPerms.getUserManager().modifyUser(player.getUniqueId(), userEditor -> {
+
+                // 使用传统方式移除之前的VIP权限（如果存在）
+
+                // 先收集要保留的节点
+
+                java.util.List<net.luckperms.api.node.Node> nodesToKeep = new java.util.ArrayList<>();
+
+                for (net.luckperms.api.node.Node n : userEditor.data().toCollection()) {
+
+                    if (!(n instanceof InheritanceNode &&
+
+                            ((InheritanceNode) n).getGroupName().equals("vip"))) {
+
+                        nodesToKeep.add(n);
+
+                    }
+
+                }
+
+                // 清空所有节点并重新添加保留的节点
+
+                userEditor.data().clear();
+
+                for (net.luckperms.api.node.Node n : nodesToKeep) {
+
+                    userEditor.data().add(n);
+
+                }
+
+                // 添加新的VIP权限
+
+                userEditor.data().add(node);
+
+            }).thenRun(() -> {
+
+                // 异步操作完成后，在主线程发送消息
+
+                getServer().getScheduler().runTask(this, () -> {
+
+                    player.sendMessage(ChatColor.GREEN + "您的VIP权限已成功设置，有效期为一个月！");
+
+                });
+
+            }).exceptionally(throwable -> {
+
+                getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 设置玩家VIP权限组时出错: " + throwable.getMessage());
+
+                player.sendMessage(ChatColor.RED + "设置VIP权限时出现错误，请联系管理员！");
+
+                return null;
+
+            });
+
+        } catch (Exception e) {
+
+            getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 设置玩家VIP权限组时出错: " + e.getMessage());
+
+            player.sendMessage(ChatColor.RED + "设置VIP权限时出现错误，请联系管理员！");
+
+        }
+
+    }
+
+    
+
+    /**
+
+     * 检查玩家是否拥有VIP权限
+
+     */
+
+    private boolean hasVipPermission(Player player) {
+
+        if (luckPerms == null) {
+
+            return false;
+
+        }
+
+        
+
+        try {
+
+            User user = luckPerms.getUserManager().getUser(player.getUniqueId());
+
+            if (user == null) {
+
+                return false;
+
+            }
+
+            
+
+            // 检查用户是否拥有VIP组的继承权限且未过期
+
+            return user.getInheritedGroups(user.getQueryOptions()).stream()
+
+                    .anyMatch(group -> group.getName().equalsIgnoreCase("vip"));
+
+        } catch (Exception e) {
+
+            getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 检查玩家VIP权限时出错: " + e.getMessage());
+
+            return false;
+
+        }
+
+    }
+
+    
+
+    /**
+
+     * 延长玩家VIP权限组的有效期
+
+     */
+
+    private void extendVipGroup(Player player) {
+
+        if (luckPerms == null) {
+
+            player.sendMessage(ChatColor.RED + "权限系统未初始化，无法延长VIP权限组！");
+
+            return;
+
+        }
+
+        
+
+        try {
+
+            // 获取用户
+
+            User user = luckPerms.getUserManager().getUser(player.getUniqueId());
+
+            if (user == null) {
+
+                player.sendMessage(ChatColor.RED + "无法获取用户信息！");
+
+                return;
+
+            }
+
+            
+
+            // 创建新的继承节点（将用户添加到VIP组，延长30天有效期）
+
+            InheritanceNode node = InheritanceNode.builder("vip")
+
+                    .expiry(30, java.util.concurrent.TimeUnit.DAYS) // 延长30天有效期
+
+                    .build();
+
+            
+
+            // 构建修改任务并应用
+
+            luckPerms.getUserManager().modifyUser(player.getUniqueId(), userEditor -> {
+
+                // 使用传统方式移除之前的VIP权限（如果存在）
+                // 先收集要保留的节点
+                java.util.List<net.luckperms.api.node.Node> nodesToKeep = new java.util.ArrayList<>();
+                for (net.luckperms.api.node.Node n : userEditor.data().toCollection()) {
+                    if (!(n instanceof InheritanceNode &&
+                            ((InheritanceNode) n).getGroupName().equals("vip"))) {
+                        nodesToKeep.add(n);
+                    }
+                }
+                // 清空所有节点并重新添加保留的节点
+                userEditor.data().clear();
+                for (net.luckperms.api.node.Node n : nodesToKeep) {
+                    userEditor.data().add(n);
+                }
+                // 添加新的VIP权限（延长有效期）
+                userEditor.data().add(node);
+
+            }).thenRun(() -> {
+
+                // 异步操作完成后，在主线程发送消息
+
+                getServer().getScheduler().runTask(this, () -> {
+
+                    player.sendMessage(ChatColor.GREEN + "您的VIP权限已成功续期，有效期延长一个月！");
+
+                });
+
+            }).exceptionally(throwable -> {
+
+                getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 延长玩家VIP权限组时出错: " + throwable.getMessage());
+
+                player.sendMessage(ChatColor.RED + "延长VIP权限时出现错误，请联系管理员！");
+
+                return null;
+
+            });
+
+        } catch (Exception e) {
+
+            getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 延长玩家VIP权限组时出错: " + e.getMessage());
+
+            player.sendMessage(ChatColor.RED + "延长VIP权限时出现错误，请联系管理员！");
+
+        }
+
+    }
+
+    
+
+    private void lockTimeToDay() {
+
+        for (World w : getServer().getWorlds()) {
+
+            w.setGameRuleValue("doDaylightCycle", "false");
+
+            w.setGameRuleValue("doWeatherCycle", "false");
+
+            w.setTime(6000);
+
+            w.setStorm(false);
+
+            w.setThundering(false);
+
+        }
+
+    }
+
+    /**
+     * 打开权益购买/充值GUI界面
+     */
+    private void openRechargeGUI(Player p) {
+        // 创建权益购买/充值GUI界面
+        Inventory rechargeGUI = Bukkit.createInventory(null, 54, ChatColor.AQUA + "✦ " + ChatColor.BOLD + "权益购买/充值中心" + ChatColor.AQUA + " ✦");
+        
+        // 获取玩家名称
+        String playerName = p.getName();
+        // 从数据库获取玩家信息
+        Map<String, Object> levelInfo = getPlayerLevelInfo(playerName);
+        int catFood = (Integer) levelInfo.getOrDefault("cat_food", 0);
+        
+        // 装饰性玻璃板 - 蓝色边框
+        Material blueGlassMat = Material.matchMaterial("STAINED_GLASS_PANE");
+        ItemStack blueGlassPane = blueGlassMat != null ? 
+            new ItemStack(blueGlassMat, 1, (short) 3) : 
+            new ItemStack(Material.BLUE_STAINED_GLASS_PANE, 1);
+        ItemMeta blueGlassMeta = blueGlassPane.getItemMeta();
+        blueGlassMeta.setDisplayName(ChatColor.BLUE + "权益中心");
+        blueGlassPane.setItemMeta(blueGlassMeta);
+        
+        // 装饰性玻璃板 - 青色背景
+        Material cyanGlassMat = Material.matchMaterial("STAINED_GLASS_PANE");
+        ItemStack cyanGlassPane = cyanGlassMat != null ? 
+            new ItemStack(cyanGlassMat, 1, (short) 9) : 
+            new ItemStack(Material.CYAN_STAINED_GLASS_PANE, 1);
+        ItemMeta cyanGlassMeta = cyanGlassPane.getItemMeta();
+        cyanGlassMeta.setDisplayName(ChatColor.AQUA + " ");
+        cyanGlassPane.setItemMeta(cyanGlassMeta);
+        
+        // 填充背景
+        for (int i = 0; i < 54; i++) {
+            rechargeGUI.setItem(i, cyanGlassPane.clone());
+        }
+        
+        // 设置边框
+        int[] borderSlots = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 17, 18, 26, 27, 35, 36, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53};
+        for (int slot : borderSlots) {
+            rechargeGUI.setItem(slot, blueGlassPane.clone());
+        }
+        
+        // VIP权益选项
+        Material diamondMat = Material.matchMaterial("DIAMOND");
+        ItemStack vipItem = diamondMat != null ? 
+            new ItemStack(diamondMat) : 
+            new ItemStack(Material.DIAMOND);
+        ItemMeta vipMeta = vipItem.getItemMeta();
+        vipMeta.setDisplayName(ChatColor.GOLD + "✦ " + ChatColor.BOLD + "VIP权益" + ChatColor.GOLD + " ✦");
+        List<String> vipLore = new ArrayList<>();
+        vipLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "300猫粮" + ChatColor.WHITE + " ✿");
+        vipLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
+        vipLore.add("");
+        vipLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击购买VIP权限" + ChatColor.YELLOW + " ❁");
+        vipMeta.setLore(vipLore);
+        vipItem.setItemMeta(vipMeta);
+        rechargeGUI.setItem(20, vipItem);
+        
+        // 钻石权益选项
+        Material diamondBlockMat = Material.matchMaterial("DIAMOND_BLOCK");
+        ItemStack diamondBlockItem = diamondBlockMat != null ? 
+            new ItemStack(diamondBlockMat) : 
+            new ItemStack(Material.DIAMOND_BLOCK);
+        ItemMeta diamondBlockMeta = diamondBlockItem.getItemMeta();
+        diamondBlockMeta.setDisplayName(ChatColor.AQUA + "✦ " + ChatColor.BOLD + "钻石权益" + ChatColor.AQUA + " ✦");
+        List<String> diamondBlockLore = new ArrayList<>();
+        diamondBlockLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "500猫粮" + ChatColor.WHITE + " ✿");
+        diamondBlockLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "三个月" + ChatColor.WHITE + " ✿");
+        diamondBlockLore.add("");
+        diamondBlockLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击购买钻石权益" + ChatColor.YELLOW + " ❁");
+        diamondBlockMeta.setLore(diamondBlockLore);
+        diamondBlockItem.setItemMeta(diamondBlockMeta);
+        rechargeGUI.setItem(22, diamondBlockItem);
+        
+        // 绿宝石权益选项
+        Material emeraldMat = Material.matchMaterial("EMERALD");
+        ItemStack emeraldItem = emeraldMat != null ? 
+            new ItemStack(emeraldMat) : 
+            new ItemStack(Material.EMERALD);
+        ItemMeta emeraldMeta = emeraldItem.getItemMeta();
+        emeraldMeta.setDisplayName(ChatColor.GREEN + "✦ " + ChatColor.BOLD + "绿宝石权益" + ChatColor.GREEN + " ✦");
+        List<String> emeraldLore = new ArrayList<>();
+        emeraldLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "800猫粮" + ChatColor.WHITE + " ✿");
+        emeraldLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "六个月" + ChatColor.WHITE + " ✿");
+        emeraldLore.add("");
+        emeraldLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击购买绿宝石权益" + ChatColor.YELLOW + " ❁");
+        emeraldMeta.setLore(emeraldLore);
+        emeraldItem.setItemMeta(emeraldItem.clone().getItemMeta());
+        rechargeGUI.setItem(24, emeraldItem);
+        
+        // 玩家信息显示
+        Material playerHeadMat = Material.matchMaterial("SKULL_ITEM");
+        ItemStack playerHead = playerHeadMat != null ? 
+            new ItemStack(playerHeadMat, 1, (short) 3) : 
+            new ItemStack(Material.PLAYER_HEAD, 1);
+        SkullMeta headMeta = (SkullMeta) playerHead.getItemMeta();
+        if (playerHeadMat != null) {
+            // 1.12.2及以下版本
+            headMeta.setOwner(p.getName());
+        } else {
+            // 1.13及以上版本
+            headMeta.setOwningPlayer(p);
+        }
+        headMeta.setDisplayName(ChatColor.LIGHT_PURPLE + "★ " + ChatColor.BOLD + "玩家信息" + ChatColor.LIGHT_PURPLE + " ★");
+        List<String> headLore = new ArrayList<>();
+        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "玩家: " + ChatColor.YELLOW + p.getName() + ChatColor.WHITE + " ✿");
+        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "当前猫粮: " + ChatColor.LIGHT_PURPLE + catFood + ChatColor.WHITE + " ✿");
+        headLore.add("");
+        headLore.add(ChatColor.LIGHT_PURPLE + "❀ " + ChatColor.BOLD + "点击刷新信息" + ChatColor.LIGHT_PURPLE + " ❀");
+        headMeta.setLore(headLore);
+        playerHead.setItemMeta(headMeta);
+        rechargeGUI.setItem(49, playerHead);
+        
+        // 打开GUI
+        p.openInventory(rechargeGUI);
+    }
 }
