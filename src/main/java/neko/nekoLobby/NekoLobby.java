@@ -785,7 +785,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
             new ItemStack(emeraldMat) : 
 
-            new ItemStack(Material.EMERALD);
+            new ItemStack(Material.matchMaterial("EMERALD"));
 
         ItemMeta rechargeMeta = rechargeItem.getItemMeta();
 
@@ -911,7 +911,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
 
 
-            if ((emeraldMat != null && item.getType() == emeraldMat) || item.getType() == Material.EMERALD) {
+            if ((emeraldMat != null && item.getType() == emeraldMat) || item.getType() == Material.matchMaterial("EMERALD")) {
 
 
 
@@ -1012,7 +1012,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         Material playerHeadMat = Material.matchMaterial("SKULL_ITEM");
         ItemStack playerHead = playerHeadMat != null ? 
             new ItemStack(playerHeadMat, 1, (short) 3) : 
-            new ItemStack(Material.PLAYER_HEAD, 1);
+            new ItemStack(Material.matchMaterial("SKULL_ITEM"), 1, (short) 3);
         SkullMeta headMeta = (SkullMeta) playerHead.getItemMeta();
         if (playerHeadMat != null) {
             // 1.12.2及以下版本
@@ -1048,7 +1048,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         Material pinkGlassMat = Material.matchMaterial("STAINED_GLASS_PANE");
         ItemStack pinkGlassPane = pinkGlassMat != null ? 
             new ItemStack(pinkGlassMat, 1, (short) 6) : 
-            new ItemStack(Material.PINK_STAINED_GLASS_PANE, 1);
+            new ItemStack(Material.matchMaterial("STAINED_GLASS_PANE"), 1, (short) 6);
         ItemMeta pinkGlassMeta = pinkGlassPane.getItemMeta();
         pinkGlassMeta.setDisplayName(ChatColor.WHITE + "❀");
         pinkGlassPane.setItemMeta(pinkGlassMeta);
@@ -1057,7 +1057,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         Material purpleGlassMat = Material.matchMaterial("STAINED_GLASS_PANE");
         ItemStack purpleGlassPane = purpleGlassMat != null ? 
             new ItemStack(purpleGlassMat, 1, (short) 2) : 
-            new ItemStack(Material.MAGENTA_STAINED_GLASS_PANE, 1);
+            new ItemStack(Material.matchMaterial("STAINED_GLASS_PANE"), 1, (short) 2);
         ItemMeta purpleGlassMeta = purpleGlassPane.getItemMeta();
         purpleGlassMeta.setDisplayName(ChatColor.WHITE + "✿");
         purpleGlassPane.setItemMeta(purpleGlassMeta);
@@ -1066,7 +1066,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         Material whiteGlassMat = Material.matchMaterial("STAINED_GLASS_PANE");
         ItemStack whiteGlassPane = whiteGlassMat != null ? 
             new ItemStack(whiteGlassMat, 1, (short) 0) : 
-            new ItemStack(Material.WHITE_STAINED_GLASS_PANE, 1);
+            new ItemStack(Material.matchMaterial("STAINED_GLASS_PANE"), 1, (short) 0);
         ItemMeta whiteGlassMeta = whiteGlassPane.getItemMeta();
         whiteGlassMeta.setDisplayName(ChatColor.WHITE + "❁");
         whiteGlassPane.setItemMeta(whiteGlassMeta);
@@ -1095,7 +1095,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         Material bookMat = Material.matchMaterial("BOOK");
         ItemStack statsItem = bookMat != null ? 
             new ItemStack(bookMat) : 
-            new ItemStack(Material.WRITTEN_BOOK);
+            new ItemStack(Material.matchMaterial("BOOK"));
         ItemMeta statsMeta = statsItem.getItemMeta();
         statsMeta.setDisplayName(ChatColor.AQUA + "✉ " + ChatColor.BOLD + "基础信息" + ChatColor.AQUA + " ✉");
         List<String> statsLore = new ArrayList<>();
@@ -1111,7 +1111,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         Material expBottleMat = Material.matchMaterial("EXP_BOTTLE");
         ItemStack levelItem = expBottleMat != null ? 
             new ItemStack(expBottleMat) : 
-            new ItemStack(Material.EXPERIENCE_BOTTLE);
+            new ItemStack(Material.matchMaterial("EXP_BOTTLE"));
         ItemMeta levelMeta = levelItem.getItemMeta();
 
         levelMeta.setDisplayName(ChatColor.GREEN + "✧ " + ChatColor.BOLD + "等级信息" + ChatColor.GREEN + " ✧");
@@ -1136,7 +1136,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         Material bedMat = Material.matchMaterial("BED");
         ItemStack bedwarsItem = bedMat != null ? 
             new ItemStack(bedMat) : 
-            new ItemStack(Material.RED_BED);
+            new ItemStack(Material.matchMaterial("BED"));
         ItemMeta bedwarsMeta = bedwarsItem.getItemMeta();
         bedwarsMeta.setDisplayName(ChatColor.RED + "⚔ " + ChatColor.BOLD + "起床战争" + ChatColor.RED + " ⚔");
         List<String> bedwarsLore = new ArrayList<>();
@@ -1157,7 +1157,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         Material diamondSwordMat = Material.matchMaterial("DIAMOND_SWORD");
         ItemStack thepitItem = diamondSwordMat != null ? 
             new ItemStack(diamondSwordMat) : 
-            new ItemStack(Material.DIAMOND_SWORD);
+            new ItemStack(Material.matchMaterial("DIAMOND_SWORD"));
         ItemMeta thepitMeta = thepitItem.getItemMeta();
         thepitMeta.setDisplayName(ChatColor.GOLD + "⚔ " + ChatColor.BOLD + "天坑乱斗" + ChatColor.GOLD + " ⚔");
         List<String> thepitLore = new ArrayList<>();
@@ -1222,55 +1222,40 @@ public final class NekoLobby extends JavaPlugin implements Listener {
     }
 
     @EventHandler
-
     public void onInventoryClick(InventoryClickEvent e) {
-
+        // 基础检查
+        if (!(e.getWhoClicked() instanceof Player)) return;
+        
         Player player = (Player) e.getWhoClicked();
-
-        ItemStack clickedItem = e.getCurrentItem();
-
+        Inventory clickedInventory = e.getClickedInventory();
         
-
-        // 检查是否点击了空物品
-
-        if (clickedItem == null || clickedItem.getType() == Material.AIR) {
-
+        // 确保点击的是顶部Inventory（不是玩家自己的背包）
+        if (clickedInventory == null || !clickedInventory.equals(e.getView().getTopInventory())) {
             return;
-
         }
-
         
-
-        // 获取GUI标题（兼容1.12.2版本）
-
-        String inventoryTitle = getName();
-
+        ItemStack clickedItem = e.getCurrentItem();
+        if (clickedItem == null || clickedItem.getType() == Material.AIR) {
+            return;
+        }
         
-
-        // 添加调试信息
-
-        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 玩家 " + player.getName() + " 点击了GUI: " + inventoryTitle);
-
-        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 玩家 " + player.getName() + " 点击了槽位 " + e.getSlot());
-
+        String inventoryTitle = e.getView().getTitle();
         
-
-        // 根据GUI标题处理不同的GUI交互
-
-        if (inventoryTitle.contains("个人档案")) {
-
-            e.setCancelled(true); // 防止玩家拿取物品
-
+        // 使用颜色代码清理后的标题进行匹配
+        String cleanTitle = ChatColor.stripColor(inventoryTitle);
+        
+        // 调试信息
+        getLogger().info("玩家 " + player.getName() + " 点击了GUI: " + cleanTitle + " (原始: " + inventoryTitle + ")");
+        getLogger().info("点击槽位: " + e.getSlot() + ", 物品: " + clickedItem.getType());
+        
+        // 处理不同的GUI
+        if (cleanTitle.contains("个人档案")) {
+            e.setCancelled(true);
             handleProfileGUIInteraction(e);
-
-        } else if (inventoryTitle.contains("权益购买") || inventoryTitle.contains("充值中心")) {
-
-            e.setCancelled(true); // 防止玩家拿取物品
-
+        } else if (cleanTitle.contains("权益购买") || cleanTitle.contains("充值中心")) {
+            e.setCancelled(true);
             handleRechargeGUIInteraction(e);
-
         }
-
     }
     
     private void handleProfileGUIInteraction(InventoryClickEvent e) {
@@ -1334,12 +1319,10 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         // 如果点击的是空槽位或装饰性物品，则不处理
         Material glassPaneMat = Material.matchMaterial("STAINED_GLASS_PANE");
         boolean isGlassPane = glassPaneMat != null ? 
+
             clickedItem.getType() == glassPaneMat : 
-            clickedItem.getType() == Material.GRAY_STAINED_GLASS_PANE || 
-            clickedItem.getType() == Material.BLUE_STAINED_GLASS_PANE ||
-            clickedItem.getType() == Material.PINK_STAINED_GLASS_PANE ||
-            clickedItem.getType() == Material.MAGENTA_STAINED_GLASS_PANE ||
-            clickedItem.getType() == Material.WHITE_STAINED_GLASS_PANE;
+
+            (clickedItem.getType() == Material.matchMaterial("STAINED_GLASS_PANE") && (clickedItem.getDurability() == 0 || clickedItem.getDurability() == 2 || clickedItem.getDurability() == 3 || clickedItem.getDurability() == 6 || clickedItem.getDurability() == 7 || clickedItem.getDurability() == 8 || clickedItem.getDurability() == 9 || clickedItem.getDurability() == 15));
             
         if (clickedItem == null || clickedItem.getType() == Material.AIR || isGlassPane) {
 
@@ -1355,7 +1338,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
         Material skullMat = Material.matchMaterial("SKULL_ITEM");
 
-        if ((skullMat != null && clickedItem.getType() == skullMat) || clickedItem.getType() == Material.PLAYER_HEAD) {
+        if ((skullMat != null && clickedItem.getType() == skullMat) || clickedItem.getType() == Material.matchMaterial("SKULL_ITEM")) {
 
             getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] Player " + player.getName() + " clicked player head item");
 
@@ -1381,7 +1364,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
         Material bookMat = Material.matchMaterial("BOOK");
 
-        if ((bookMat != null && clickedItem.getType() == bookMat) || clickedItem.getType() == Material.WRITTEN_BOOK) {
+        if ((bookMat != null && clickedItem.getType() == bookMat) || clickedItem.getType() == Material.matchMaterial("BOOK")) {
 
             getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] Player " + player.getName() + " clicked book item");
 
@@ -1409,7 +1392,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
 
 
-        if ((expBottleMat != null && clickedItem.getType() == expBottleMat) || clickedItem.getType() == Material.EXPERIENCE_BOTTLE) {
+        if ((expBottleMat != null && clickedItem.getType() == expBottleMat) || clickedItem.getType() == Material.matchMaterial("EXP_BOTTLE")) {
 
             getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] Player " + player.getName() + " clicked exp bottle item");
 
@@ -1445,7 +1428,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
         Material bedMat = Material.matchMaterial("BED");
 
-        if ((bedMat != null && clickedItem.getType() == bedMat) || clickedItem.getType() == Material.RED_BED) {
+        if ((bedMat != null && clickedItem.getType() == bedMat) || clickedItem.getType() == Material.matchMaterial("BED")) {
 
             getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] Player " + player.getName() + " clicked bed item");
 
@@ -1480,7 +1463,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
 
 
-        if ((diamondSwordMat != null && clickedItem.getType() == diamondSwordMat) || clickedItem.getType() == Material.DIAMOND_SWORD) {
+        if ((diamondSwordMat != null && clickedItem.getType() == diamondSwordMat) || clickedItem.getType() == Material.matchMaterial("DIAMOND_SWORD")) {
 
             getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] Player " + player.getName() + " clicked diamond sword item");
 
@@ -1576,15 +1559,15 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
             clickedItem.getType() == glassPaneMat : 
 
-            clickedItem.getType() == Material.GRAY_STAINED_GLASS_PANE || 
+            clickedItem.getType() == Material.matchMaterial("STAINED_GLASS_PANE") || 
 
-            clickedItem.getType() == Material.BLUE_STAINED_GLASS_PANE ||
+            clickedItem.getType() == Material.matchMaterial("STAINED_GLASS_PANE") ||
 
-            clickedItem.getType() == Material.PINK_STAINED_GLASS_PANE ||
+            clickedItem.getType() == Material.matchMaterial("STAINED_GLASS_PANE") ||
 
-            clickedItem.getType() == Material.MAGENTA_STAINED_GLASS_PANE ||
+            clickedItem.getType() == Material.matchMaterial("STAINED_GLASS_PANE") ||
 
-            clickedItem.getType() == Material.WHITE_STAINED_GLASS_PANE;
+            clickedItem.getType() == Material.matchMaterial("STAINED_GLASS_PANE");
 
             
 
@@ -1600,7 +1583,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
         Material diamondMat = Material.matchMaterial("DIAMOND");
 
-        if ((diamondMat != null && clickedItem.getType() == diamondMat) || clickedItem.getType() == Material.DIAMOND) {
+        if ((diamondMat != null && clickedItem.getType() == diamondMat) || clickedItem.getType() == Material.matchMaterial("DIAMOND")) {
 
             // 检查玩家是否有足够的猫粮
 
@@ -1638,7 +1621,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
         Material diamondBlockMat = Material.matchMaterial("DIAMOND_BLOCK");
 
-        if ((diamondBlockMat != null && clickedItem.getType() == diamondBlockMat) || clickedItem.getType() == Material.DIAMOND_BLOCK) {
+        if ((diamondBlockMat != null && clickedItem.getType() == diamondBlockMat) || clickedItem.getType() == Material.matchMaterial("DIAMOND_BLOCK")) {
 
             // 检查玩家是否有足够的猫粮
 
@@ -1676,7 +1659,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
         Material emeraldMat = Material.matchMaterial("EMERALD");
 
-        if ((emeraldMat != null && clickedItem.getType() == emeraldMat) || clickedItem.getType() == Material.EMERALD) {
+        if ((emeraldMat != null && clickedItem.getType() == emeraldMat) || clickedItem.getType() == Material.matchMaterial("EMERALD")) {
 
             // 检查玩家是否有足够的猫粮
 
@@ -1716,7 +1699,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
             Material playerHeadMat = Material.matchMaterial("SKULL_ITEM");
 
-            if ((playerHeadMat != null && clickedItem.getType() == playerHeadMat) || clickedItem.getType() == Material.PLAYER_HEAD) {
+            if ((playerHeadMat != null && clickedItem.getType() == playerHeadMat) || clickedItem.getType() == Material.matchMaterial("SKULL_ITEM")) {
 
                 getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 玩家 " + player.getName() + " 点击了玩家头颅项目");
 
@@ -2303,7 +2286,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
             new ItemStack(blueGlassMat, 1, (short) 3) : 
 
-            new ItemStack(Material.BLUE_STAINED_GLASS_PANE, 1);
+            new ItemStack(Material.matchMaterial("STAINED_GLASS_PANE"), 1, (short) 3);
 
         ItemMeta blueGlassMeta = blueGlassPane.getItemMeta();
 
@@ -2321,7 +2304,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
             new ItemStack(cyanGlassMat, 1, (short) 9) : 
 
-            new ItemStack(Material.CYAN_STAINED_GLASS_PANE, 1);
+            new ItemStack(Material.matchMaterial("STAINED_GLASS_PANE"), 1, (short) 9);
 
         ItemMeta cyanGlassMeta = cyanGlassPane.getItemMeta();
 
@@ -2361,7 +2344,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
             new ItemStack(diamondMat) : 
 
-            new ItemStack(Material.DIAMOND);
+            new ItemStack(Material.matchMaterial("DIAMOND"));
 
         ItemMeta vipMeta = vipItem.getItemMeta();
 
@@ -2393,7 +2376,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
             new ItemStack(diamondBlockMat) : 
 
-            new ItemStack(Material.DIAMOND_BLOCK);
+            new ItemStack(Material.matchMaterial("DIAMOND_BLOCK"));
 
         ItemMeta diamondBlockMeta = diamondBlockItem.getItemMeta();
 
@@ -2425,7 +2408,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
             new ItemStack(emeraldMat) : 
 
-            new ItemStack(Material.EMERALD);
+            new ItemStack(Material.matchMaterial("EMERALD"));
 
         ItemMeta emeraldMeta = emeraldItem.getItemMeta();
 
@@ -2457,7 +2440,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
             new ItemStack(playerHeadMat, 1, (short) 3) : 
 
-            new ItemStack(Material.PLAYER_HEAD, 1);
+            new ItemStack(Material.matchMaterial("SKULL_ITEM"), 1, (short) 3);
 
         SkullMeta headMeta = (SkullMeta) playerHead.getItemMeta();
 
@@ -2577,23 +2560,23 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
 
 
-            clickedItem.getType() == Material.GRAY_STAINED_GLASS_PANE || 
+            clickedItem.getType() == Material.matchMaterial("STAINED_GLASS_PANE") || 
 
 
 
-            clickedItem.getType() == Material.BLUE_STAINED_GLASS_PANE ||
+            clickedItem.getType() == Material.matchMaterial("STAINED_GLASS_PANE") ||
 
 
 
-            clickedItem.getType() == Material.PINK_STAINED_GLASS_PANE ||
+            clickedItem.getType() == Material.matchMaterial("STAINED_GLASS_PANE") ||
 
 
 
-            clickedItem.getType() == Material.MAGENTA_STAINED_GLASS_PANE ||
+            clickedItem.getType() == Material.matchMaterial("STAINED_GLASS_PANE") ||
 
 
 
-            clickedItem.getType() == Material.WHITE_STAINED_GLASS_PANE;
+            clickedItem.getType() == Material.matchMaterial("STAINED_GLASS_PANE");
 
 
 
@@ -2695,7 +2678,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
             Material playerHeadMat = Material.matchMaterial("SKULL_ITEM");
 
-            if ((playerHeadMat != null && clickedItem.getType() == playerHeadMat) || clickedItem.getType() == Material.PLAYER_HEAD) {
+            if ((playerHeadMat != null && clickedItem.getType() == playerHeadMat) || clickedItem.getType() == Material.matchMaterial("SKULL_ITEM")) {
 
                 getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 玩家 " + player.getName() + " 点击了玩家头颅项目");
 
