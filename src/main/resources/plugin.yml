@@ -1,15 +1,23 @@
-name: NekoLobby
-version: '1.0-SNAPSHOT'
-main: neko.nekoLobby.NekoLobby
-api-version: '1.21'
-authors: [ 不穿胖次の小奶猫 ]
-website: https://cnmsb.xin/
-depend: [PlaceholderAPI]
-commands:
-  spawn:
-    description: 设置或传送至出生点
-    usage: /spawn set
-  setrange:
-    description: 设置活动范围点
-    usage: /setrange <point1|point2>
-    permission: nekospawn.setrange
+name: NekoLobby
+version: '1.0-SNAPSHOT'
+main: neko.nekoLobby.NekoLobby
+api-version: '1.12'
+authors: [ 不穿胖次の小奶猫 ]
+website: https://cnmsb.xin/
+depend: [PlaceholderAPI]
+commands:
+  spawn:
+    description: 设置或传送至出生点
+    usage: /spawn set
+  setrange:
+    description: 设置活动范围点
+    usage: /setrange <point1|point2>
+    permission: nekospawn.setrange
+  zpay:
+    description: Z-Pay支付相关命令
+    usage: /zpay <complete> <playerName> 或 /zpay confirm
+    permission: nekospawn.zpay.admin
+  vippay:
+    description: VIP支付确认命令
+    usage: /vippay confirm
+    permission: nekospawn.vip.pay
