@@ -904,13 +904,22 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
         if (config.contains("spawn.world")) {
             String worldName = config.getString("spawn.world");
+            World world = getServer().getWorld(worldName);
+            
+            // 检查世界是否存在
+            if (world == null) {
+                getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 错误: 世界 '" + worldName + "' 不存在!");
+                player.sendMessage(ChatColor.RED + "出生点世界不存在，请联系管理员!");
+                return; // 不进行传送
+            }
+            
             double x = config.getDouble("spawn.x");
             double y = config.getDouble("spawn.y");
             double z = config.getDouble("spawn.z");
             float yaw = (float) config.getDouble("spawn.yaw");
             float pitch = (float) config.getDouble("spawn.pitch");
 
-            Location spawnLocation = new Location(getServer().getWorld(worldName), x, y, z, yaw, pitch);
+            Location spawnLocation = new Location(world, x, y, z, yaw, pitch);
             player.teleport(spawnLocation);
         }
 
@@ -1884,6 +1893,36 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
 
 
+        // 现金支付VIP购买（槽位22）
+
+        if (e.getSlot() == 22) { // VIP权益选项（现金支付）
+
+            player.sendMessage(ChatColor.YELLOW + "正在为您生成Z-Pay支付二维码...");
+
+            // 创建Z-Pay支付订单
+
+            createZPayOrder(player);
+
+            return;
+
+        }
+
+
+
+        // 确认支付完成（槽位24）
+
+        if (e.getSlot() == 24) { // 确认支付完成按钮
+
+            player.sendMessage(ChatColor.YELLOW + "请使用 /vippay confirm 命令确认支付完成并激活VIP权限。");
+
+            player.sendMessage(ChatColor.GREEN + "提示: 在聊天框中输入 " + ChatColor.AQUA + "/vippay confirm" + ChatColor.GREEN + " 来激活VIP权限。");
+
+            return;
+
+        }
+
+
+
         // 如果点击的是玩家信息头颅，刷新GUI（槽位49）
 
         if (e.getSlot() == 49) {
@@ -1921,6 +1960,154 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             openRechargeGUI(player);
             return;
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // 现金支付VIP购买（槽位22）
+
+
+
+        if (e.getSlot() == 22) { // VIP权益选项（现金支付）
+
+
+
+            player.sendMessage(ChatColor.YELLOW + "正在为您生成Z-Pay支付二维码...");
+
+
+
+            // 创建Z-Pay支付订单
+
+
+
+            createZPayOrder(player);
+
+
+
+            return;
+
+
+
+        }
+
+
+
+
+        // 现金支付VIP购买（槽位22）
+
+        if (e.getSlot() == 22) { // VIP权益选项（现金支付）
+
+            player.sendMessage(ChatColor.YELLOW + "正在为您生成Z-Pay支付二维码...");
+
+            // 创建Z-Pay支付订单
+
+            createZPayOrder(player);
+
+            return;
+
+        }
+
+
+
+
+
+
+
+        // 确认支付完成（槽位24）
+
+
+
+        if (e.getSlot() == 24) { // 确认支付完成按钮
+
+
+
+            player.sendMessage(ChatColor.YELLOW + "请使用 /vippay confirm 命令确认支付完成并激活VIP权限。");
+
+
+
+            player.sendMessage(ChatColor.GREEN + "提示: 在聊天框中输入 " + ChatColor.AQUA + "/vippay confirm" + ChatColor.GREEN + " 来激活VIP权限。");
+
+
+
+            return;
+
+
+
+        }
+
+
+
+
+        // 现金支付VIP购买（槽位22）
+
+
+
+        if (e.getSlot() == 22) { // VIP权益选项（现金支付）
+
+
+
+            player.sendMessage(ChatColor.YELLOW + "正在为您生成Z-Pay支付二维码...");
+
+
+
+            // 创建Z-Pay支付订单
+
+
+
+            createZPayOrder(player);
+
+
+
+            return;
+
+
+
+        }
+
+
+
+
+
+
+
+        // 确认支付完成（槽位24）
+
+
+
+        if (e.getSlot() == 24) { // 确认支付完成按钮
+
+
+
+            player.sendMessage(ChatColor.YELLOW + "请使用 /vippay confirm 命令确认支付完成并激活VIP权限。");
+
+
+
+            player.sendMessage(ChatColor.GREEN + "提示: 在聊天框中输入 " + ChatColor.AQUA + "/vippay confirm" + ChatColor.GREEN + " 来激活VIP权限。");
+
+
+
+            return;
+
+
+
+        }
+
+
+
+
+
+
 
         // 如果点击的是玩家信息头颅，刷新GUI（槽位49）
 
@@ -2967,19 +3154,49 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
 
 
-            openRechargeGUI(player);
+            openRechargeGUI(player);
+
+
+
+            return;
+
+
+
+        }
+
+
+
+
+
+
+
+        // 现金支付VIP购买（槽位22）
+
+        if (e.getSlot() == 22) { // VIP权益选项（现金支付）
+
+            player.sendMessage(ChatColor.YELLOW + "正在为您生成Z-Pay支付二维码...");
+
+            // 创建Z-Pay支付订单
+
+            createZPayOrder(player);
+
+            return;
+
+        }
+
+
+
+        // 确认支付完成（槽位24）
 
+        if (e.getSlot() == 24) { // 确认支付完成按钮
 
+            player.sendMessage(ChatColor.YELLOW + "请使用 /vippay confirm 命令确认支付完成并激活VIP权限。");
+
+            player.sendMessage(ChatColor.GREEN + "提示: 在聊天框中输入 " + ChatColor.AQUA + "/vippay confirm" + ChatColor.GREEN + " 来激活VIP权限。");
 
             return;
 
-
-
         }
-
-
-
-
 
 
 
