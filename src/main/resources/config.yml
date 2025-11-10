@@ -32,5 +32,4 @@ zpay:
   key: "2AmiPprT4D1d7Eyi5DNFNsi1BdnqFYPR"
   # 异步通知地址 (支付完成后Z-Pay会向此地址发送通知，如无可用本地地址)
   notify_url: "https://lobby.cnmsb.xin/zpay/notify"
-  # 同步跳转地址 (支付完成后用户浏览器会跳转到此地址，如无可用本地地址)
   http_port: 9999

@@ -23,20 +23,18 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
-public class ZPayUtil {
-    
-    // Z-Pay接口配置
-    private String apiUrl = "https://zpayz.cn/";
-    private String pid; // 商户ID
-    private String key; // 商户密钥
-    private String notifyUrl; // 异步通知地址
-    private String returnUrl; // 同步跳转地址
-    
-    public ZPayUtil(String pid, String key, String notifyUrl, String returnUrl) {
-        this.pid = pid;
-        this.key = key;
-        this.notifyUrl = notifyUrl;
-        this.returnUrl = returnUrl;
+public class ZPayUtil {
+    
+    // Z-Pay接口配置
+    private String apiUrl = "https://zpayz.cn/";
+    private String pid; // 商户ID
+    private String key; // 商户密钥
+    private String notifyUrl; // 异步通知地址
+    
+    public ZPayUtil(String pid, String key, String notifyUrl) {
+        this.pid = pid;
+        this.key = key;
+        this.notifyUrl = notifyUrl;
     }
     
     /**

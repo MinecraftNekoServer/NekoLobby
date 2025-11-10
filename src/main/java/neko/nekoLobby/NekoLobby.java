@@ -93,18 +93,16 @@ public final class NekoLobby extends JavaPlugin implements Listener {
     private LuckPerms luckPerms;
     private boolean placeholderAPIEnabled;
     
-    // Z-Pay支付工具
-
-    private ZPayUtil zPayUtil;
-
-    private String zPayPid;
-
-    private String zPayKey;
-
-    private String zPayNotifyUrl;
-
-    private String zPayReturnUrl;
-
+    // Z-Pay支付工具
+
+    private ZPayUtil zPayUtil;
+
+    private String zPayPid;
+
+    private String zPayKey;
+
+    private String zPayNotifyUrl;
+
     private int zPayHttpPort; // HTTP服务器端口
 
     
@@ -168,7 +166,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         // 生成订单号
         String orderNo = zPayUtil.generateOrderNo();
         String playerName = player.getName();
-        String subject = "NekoLobby-VIP权益";
+        String subject = "梦幻次元-VIP权益(1个月)";
         String amount = "15.00"; // 15元
         String type = "alipay"; // 默认使用支付宝，也可以是wxpay
         String ip = player.getAddress() != null ? player.getAddress().getAddress().getHostAddress() : "127.0.0.1";
@@ -190,12 +188,8 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         } else {
 
             player.sendMessage(ChatColor.RED + "创建支付订单失败：无法获取支付二维码");
-
         }
-
     }
-
-    
 
     @Override
 
@@ -299,7 +293,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
             // 检查配置是否完整
 
-            if (zPayPid.isEmpty() || zPayKey.isEmpty() || zPayNotifyUrl.isEmpty() || zPayReturnUrl.isEmpty()) {
+            if (zPayPid.isEmpty() || zPayKey.isEmpty() || zPayNotifyUrl.isEmpty()) {
 
                 getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] Z-Pay支付配置不完整，请检查config.yml文件!");
 
@@ -309,9 +303,9 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
             
 
-            // 创建ZPayUtil实例
-
-            zPayUtil = new ZPayUtil(zPayPid, zPayKey, zPayNotifyUrl, zPayReturnUrl);
+            // 创建ZPayUtil实例
+
+            zPayUtil = new ZPayUtil(zPayPid, zPayKey, zPayNotifyUrl);
 
             getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby] Z-Pay支付系统初始化成功!");
 
@@ -467,7 +461,51 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
                                         setPlayerVipGroup(player);
 
-                                        player.sendMessage(ChatColor.GREEN + "支付成功！您的VIP权益已自动激活，有效期为一个月！");
+                                        // 发送丰富的支付成功消息
+
+player.sendMessage("");
+
+player.sendMessage(ChatColor.GOLD + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+
+player.sendMessage(ChatColor.GREEN + "🎉 支付成功！感谢您的支持！🎉");
+
+player.sendMessage(ChatColor.AQUA + "您的VIP权益已自动激活！");
+
+player.sendMessage(ChatColor.YELLOW + "有效期: 一个月");
+
+player.sendMessage(ChatColor.LIGHT_PURPLE + "享受VIP特权，祝您游戏愉快！");
+
+player.sendMessage(ChatColor.GOLD + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+
+player.sendMessage("");
+
+
+
+                                        // 向所有在线玩家广播
+
+                                        for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+
+                                            if (onlinePlayer != null && onlinePlayer.isOnline()) {
+
+                                                onlinePlayer.sendMessage("");
+
+                                                onlinePlayer.sendMessage(ChatColor.GOLD + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+
+                                                onlinePlayer.sendMessage(ChatColor.AQUA + "📢 服务器公告");
+
+                                                onlinePlayer.sendMessage(ChatColor.YELLOW + playerName + " 购买了VIP权益！");
+
+                                                onlinePlayer.sendMessage(ChatColor.GREEN + "感谢支持，祝游戏愉快！");
+
+                                                onlinePlayer.sendMessage(ChatColor.GOLD + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
+
+                                                onlinePlayer.sendMessage("");
+
+                                            }
+
+                                        }
+
+
 
                                         getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby] 玩家 " + playerName + " 的VIP权限已自动激活");
 
@@ -2129,17 +2167,11 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
 
         // 支付宝VIP购买（槽位22）
-
         if (e.getSlot() == 22) { // VIP权益选项（现金支付）
-
             player.sendMessage(ChatColor.YELLOW + "正在为您生成支付二维码...");
-
             // 创建Z-Pay支付订单
-
             createZPayOrder(player);
-
             return;
-
         }
 
 
@@ -2857,7 +2889,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         payVipItem.setItemMeta(payVipMeta);
         rechargeGUI.setItem(22, payVipItem);
 
-        
+
 
 
         // 玩家信息显示
