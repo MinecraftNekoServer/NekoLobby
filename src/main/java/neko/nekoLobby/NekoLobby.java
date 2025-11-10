@@ -293,8 +293,6 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
             zPayNotifyUrl = config.getString("zpay.notify_url", "");
 
-            zPayReturnUrl = config.getString("zpay.return_url", "");
-
             zPayHttpPort = config.getInt("zpay.http_port", 8080); // 默认端口8080
 
             
@@ -2592,145 +2590,73 @@ public final class NekoLobby extends JavaPlugin implements Listener {
                         nodesToKeep.add(n);
 
                     }
-
                 }
-
                 // 清空所有节点并重新添加保留的节点
-
                 userEditor.data().clear();
-
                 for (net.luckperms.api.node.Node n : nodesToKeep) {
-
                     userEditor.data().add(n);
-
                 }
-
                 // 添加新的VIP权限
-
                 userEditor.data().add(node);
-
             }).thenRun(() -> {
-
                 // 异步操作完成后，在主线程发送消息
-
                 getServer().getScheduler().runTask(this, () -> {
-
                     player.sendMessage(ChatColor.GREEN + "您的VIP权限已成功设置，有效期为一个月！");
-
                 });
-
             }).exceptionally(throwable -> {
-
                 getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 设置玩家VIP权限组时出错: " + throwable.getMessage());
-
                 player.sendMessage(ChatColor.RED + "设置VIP权限时出现错误，请联系管理员！");
-
                 return null;
-
             });
-
         } catch (Exception e) {
-
             getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 设置玩家VIP权限组时出错: " + e.getMessage());
-
             player.sendMessage(ChatColor.RED + "设置VIP权限时出现错误，请联系管理员！");
-
         }
-
     }
 
-    
-
     /**
-
      * 检查玩家是否拥有VIP权限
-
      */
 
     private boolean hasVipPermission(Player player) {
-
         if (luckPerms == null) {
-
             return false;
-
         }
-
-        
 
         try {
-
             User user = luckPerms.getUserManager().getUser(player.getUniqueId());
-
             if (user == null) {
-
                 return false;
-
             }
-
-            
-
             // 检查用户是否拥有VIP组的继承权限且未过期
-
             return user.getInheritedGroups(user.getQueryOptions()).stream()
-
                     .anyMatch(group -> group.getName().equalsIgnoreCase("vip"));
-
         } catch (Exception e) {
-
             getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 检查玩家VIP权限时出错: " + e.getMessage());
-
             return false;
-
         }
-
     }
 
-    
-
     /**
-
      * 延长玩家VIP权限组的有效期
-
      */
 
     private void extendVipGroup(Player player) {
-
         if (luckPerms == null) {
-
             player.sendMessage(ChatColor.RED + "权限系统未初始化，无法延长VIP权限组！");
-
             return;
-
         }
-
-        
-
         try {
-
             // 获取用户
-
             User user = luckPerms.getUserManager().getUser(player.getUniqueId());
-
             if (user == null) {
-
                 player.sendMessage(ChatColor.RED + "无法获取用户信息！");
-
                 return;
-
             }
-
-            
-
             // 创建新的继承节点（将用户添加到VIP组，延长30天有效期）
-
             InheritanceNode node = InheritanceNode.builder("vip")
-
                     .expiry(30, java.util.concurrent.TimeUnit.DAYS) // 延长30天有效期
-
                     .build();
-
-            
-
             // 构建修改任务并应用
 
             luckPerms.getUserManager().modifyUser(player.getUniqueId(), userEditor -> {
@@ -2751,35 +2677,20 @@ public final class NekoLobby extends JavaPlugin implements Listener {
                 }
                 // 添加新的VIP权限（延长有效期）
                 userEditor.data().add(node);
-
             }).thenRun(() -> {
-
                 // 异步操作完成后，在主线程发送消息
-
                 getServer().getScheduler().runTask(this, () -> {
-
                     player.sendMessage(ChatColor.GREEN + "您的VIP权限已成功续期，有效期延长一个月！");
-
                 });
-
             }).exceptionally(throwable -> {
-
                 getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 延长玩家VIP权限组时出错: " + throwable.getMessage());
-
                 player.sendMessage(ChatColor.RED + "延长VIP权限时出现错误，请联系管理员！");
-
                 return null;
-
             });
-
         } catch (Exception e) {
-
             getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 延长玩家VIP权限组时出错: " + e.getMessage());
-
             player.sendMessage(ChatColor.RED + "延长VIP权限时出现错误，请联系管理员！");
-
         }
-
     }
     
     /**
@@ -2860,213 +2771,94 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         }
     }
 
-    
-
     private void lockTimeToDay() {
-
         for (World w : getServer().getWorlds()) {
-
             w.setGameRuleValue("doDaylightCycle", "false");
-
             w.setGameRuleValue("doWeatherCycle", "false");
-
             w.setTime(6000);
-
             w.setStorm(false);
-
             w.setThundering(false);
-
         }
-
-
-
     }
 
-
-
     /**
-
      * 打开权益购买/充值GUI界面
-
      */
 
     private void openRechargeGUI(Player p) {
-
         // 创建权益购买/充值GUI界面
-
         Inventory rechargeGUI = Bukkit.createInventory(null, 54, ChatColor.AQUA + "✦ " + ChatColor.BOLD + "权益购买/充值中心" + ChatColor.AQUA + " ✦");
-
-        
-
         // 获取玩家名称
-
         String playerName = p.getName();
-
         // 从数据库获取玩家信息
-
         Map<String, Object> levelInfo = getPlayerLevelInfo(playerName);
-
         int catFood = (Integer) levelInfo.getOrDefault("cat_food", 0);
 
-        
-
         // 装饰性玻璃板 - 蓝色边框
-
         Material blueGlassMat = Material.matchMaterial("STAINED_GLASS_PANE");
-
-        ItemStack blueGlassPane = blueGlassMat != null ? 
-
-            new ItemStack(blueGlassMat, 1, (short) 3) : 
-
+        ItemStack blueGlassPane = blueGlassMat != null ?
+            new ItemStack(blueGlassMat, 1, (short) 3) :
             new ItemStack(Material.matchMaterial("STAINED_GLASS_PANE"), 1, (short) 3);
-
         ItemMeta blueGlassMeta = blueGlassPane.getItemMeta();
-
         blueGlassMeta.setDisplayName(ChatColor.BLUE + "权益中心");
-
         blueGlassPane.setItemMeta(blueGlassMeta);
 
-        
-
         // 装饰性玻璃板 - 青色背景
-
         Material cyanGlassMat = Material.matchMaterial("STAINED_GLASS_PANE");
-
-        ItemStack cyanGlassPane = cyanGlassMat != null ? 
-
-            new ItemStack(cyanGlassMat, 1, (short) 9) : 
-
+        ItemStack cyanGlassPane = cyanGlassMat != null ?
+            new ItemStack(cyanGlassMat, 1, (short) 9) :
             new ItemStack(Material.matchMaterial("STAINED_GLASS_PANE"), 1, (short) 9);
-
         ItemMeta cyanGlassMeta = cyanGlassPane.getItemMeta();
-
         cyanGlassMeta.setDisplayName(ChatColor.AQUA + " ");
-
         cyanGlassPane.setItemMeta(cyanGlassMeta);
 
-        
-
         // 填充背景
-
         for (int i = 0; i < 54; i++) {
-
             rechargeGUI.setItem(i, cyanGlassPane.clone());
-
         }
-
-        
 
         // 设置边框
-
         int[] borderSlots = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 17, 18, 26, 27, 35, 36, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53};
-
         for (int slot : borderSlots) {
-
             rechargeGUI.setItem(slot, blueGlassPane.clone());
-
         }
 
-        
-
         // VIP权益选项
-
         Material diamondMat = Material.matchMaterial("DIAMOND");
-
-        ItemStack vipItem = diamondMat != null ? 
-
-            new ItemStack(diamondMat) : 
-
+        ItemStack vipItem = diamondMat != null ?
+            new ItemStack(diamondMat) :
             new ItemStack(Material.matchMaterial("DIAMOND"));
-
         ItemMeta vipMeta = vipItem.getItemMeta();
-
         vipMeta.setDisplayName(ChatColor.GOLD + "✦ " + ChatColor.BOLD + "VIP权益" + ChatColor.GOLD + " ✦");
-
         List<String> vipLore = new ArrayList<>();
-
         vipLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "300猫粮" + ChatColor.WHITE + " ✿");
-
         vipLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
-
         vipLore.add("");
-
         vipLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击购买VIP权限" + ChatColor.YELLOW + " ❁");
-
         vipMeta.setLore(vipLore);
-
         vipItem.setItemMeta(vipMeta);
-
         rechargeGUI.setItem(20, vipItem);
 
-        
-
-        // VIP权益选项 - 使用现金购买 (Z-Pay)
-
+        // VIP购买支付宝
         Material goldIngotMat = Material.matchMaterial("GOLD_INGOT");
-
-        ItemStack payVipItem = goldIngotMat != null ? 
-
-            new ItemStack(goldIngotMat) : 
-
+        ItemStack payVipItem = goldIngotMat != null ?
+            new ItemStack(goldIngotMat) :
             new ItemStack(Material.matchMaterial("GOLD_INGOT")); // Fallback
-
         ItemMeta payVipMeta = payVipItem.getItemMeta();
-
         payVipMeta.setDisplayName(ChatColor.GOLD + "✦ " + ChatColor.BOLD + "VIP权益 (支付宝)" + ChatColor.GOLD + " ✦");
-
         List<String> payVipLore = new ArrayList<>();
-
         payVipLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "15元" + ChatColor.WHITE + " ✿");
-
         payVipLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
-
         payVipLore.add("");
-
         payVipLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击用支付宝购买VIP权限" + ChatColor.YELLOW + " ❁");
-
         payVipLore.add("");
-
         payVipLore.add(ChatColor.RED + "⚠ " + ChatColor.BOLD + "需要真实支付" + ChatColor.RED + " ⚠");
-
         payVipMeta.setLore(payVipLore);
-
         payVipItem.setItemMeta(payVipMeta);
-
         rechargeGUI.setItem(22, payVipItem);
 
         
 
-        // 支付确认按钮 - 现在不再需要这个按钮，因为支付成功后会自动激活VIP
-
-        Material emeraldMat = Material.matchMaterial("EMERALD");
-
-        ItemStack confirmItem = emeraldMat != null ? 
-
-            new ItemStack(emeraldMat) : 
-
-            new ItemStack(Material.matchMaterial("EMERALD"));
-
-        ItemMeta confirmMeta = confirmItem.getItemMeta();
-
-        confirmMeta.setDisplayName(ChatColor.GREEN + "✦ " + ChatColor.BOLD + "支付已完成" + ChatColor.GREEN + " ✦");
-
-        List<String> confirmLore = new ArrayList<>();
-
-        confirmLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "支付成功后VIP权限会自动激活" + ChatColor.WHITE + " ✿");
-
-        confirmLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "无需手动点击" + ChatColor.WHITE + " ✿");
-
-        confirmLore.add("");
-
-        confirmLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "系统自动处理" + ChatColor.YELLOW + " ❁");
-
-        confirmMeta.setLore(confirmLore);
-
-        confirmItem.setItemMeta(confirmMeta);
-
-        rechargeGUI.setItem(24, confirmItem);
-
-        
 
         // 玩家信息显示
 
