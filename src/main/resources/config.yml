@@ -31,6 +31,8 @@ zpay:
   # 商户密钥
   key: "2AmiPprT4D1d7Eyi5DNFNsi1BdnqFYPR"
   # 异步通知地址 (支付完成后Z-Pay会向此地址发送通知，如无可用本地地址)
-  notify_url: "http://127.0.0.1:8080/zpay/notify"
+  notify_url: "http://lobby.cnmsb.xin/zpay/notify"
   # 同步跳转地址 (支付完成后用户浏览器会跳转到此地址，如无可用本地地址)
-  return_url: "http://127.0.0.1:8080/zpay/return"
+  return_url: "http://lobby.cnmsb.xin/zpay/return"
+  # HTTP服务器端口 (用于处理支付回调，每个服务器应使用不同的端口)
+  http_port: 9999

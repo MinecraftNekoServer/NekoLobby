@@ -49,6 +49,12 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.util.regex.Pattern;
 
 // LuckPerms API
 import net.luckperms.api.LuckPerms;
@@ -59,6 +65,11 @@ import net.luckperms.api.node.types.InheritanceNode;
 
 // PlaceholderAPI
 import me.clip.placeholderapi.PlaceholderAPI;
+
+// HTTP服务器相关
+import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpExchange;
 
 public final class NekoLobby extends JavaPlugin implements Listener {
     // 存储玩家双击空格时间的Map
@@ -82,12 +93,17 @@ public final class NekoLobby extends JavaPlugin implements Listener {
     private LuckPerms luckPerms;
     private boolean placeholderAPIEnabled;
     
-    // Z-Pay支付工具
-    private ZPayUtil zPayUtil;
-    private String zPayPid;
-    private String zPayKey;
-    private String zPayNotifyUrl;
-    private String zPayReturnUrl;
+    // Z-Pay支付工具
+    private ZPayUtil zPayUtil;
+    private String zPayPid;
+    private String zPayKey;
+    private String zPayNotifyUrl;
+    private String zPayReturnUrl;
+    private int zPayHttpPort; // HTTP服务器端口
+    
+    // HTTP服务器
+    private HttpServer httpServer;
+    private ExecutorService httpExecutor;
 
     @Override
     public void onEnable() {
@@ -111,29 +127,22 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         initializeZPayConfig();
         
         // 检查PlaceholderAPI是否启用
-
         if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
-
             placeholderAPIEnabled = true;
-
             getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby] PlaceholderAPI 已连接!");
-
         } else {
-
             placeholderAPIEnabled = false;
-
             getServer().getConsoleSender().sendMessage(ChatColor.YELLOW + "[NekoLobby] PlaceholderAPI 未安装或未启用，部分功能可能受限!");
-
         }
-
+        
+        // 启动HTTP服务器以处理支付回调
+        startHttpServer();
     }
 
     
 
     /**
-
      * 创建Z-Pay支付订单
-
      */
 
     private void createZPayOrder(Player player) {
@@ -158,20 +167,20 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         // 创建支付订单并获取二维码URL
         String qrCodeUrl = zPayUtil.getPaymentQRCodeUrl(orderNo, subject, amount, type, ip, param);
         
-        if (qrCodeUrl != null && !qrCodeUrl.isEmpty()) {
-            // 成功获取二维码URL，显示在地图上
-            player.sendMessage(ChatColor.GREEN + "VIP支付订单创建成功！");
-            player.sendMessage(ChatColor.YELLOW + "正在生成支付二维码地图...");
-            player.closeInventory(); // 关闭GUI
-            
-            // 在单独的线程中处理二维码地图渲染，避免阻塞主线程
-            Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
-                QRCodeMapRenderer.showQRCodeOnMap(player, qrCodeUrl);
-            });
-        } else {
-
-            player.sendMessage(ChatColor.RED + "创建支付订单失败：无法获取支付二维码");
-
+        if (qrCodeUrl != null && !qrCodeUrl.isEmpty()) {
+            // 成功获取二维码URL，显示在地图上
+            player.sendMessage(ChatColor.GREEN + "VIP支付订单创建成功！");
+            player.sendMessage(ChatColor.YELLOW + "正在生成支付二维码地图...");
+            player.closeInventory(); // 关闭GUI
+            
+            // 在单独的线程中处理二维码地图渲染，避免阻塞主线程
+            Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
+                QRCodeMapRenderer.showQRCodeOnMap(player, qrCodeUrl);
+            });
+        } else {
+
+            player.sendMessage(ChatColor.RED + "创建支付订单失败：无法获取支付二维码");
+
         }
 
     }
@@ -183,6 +192,9 @@ public final class NekoLobby extends JavaPlugin implements Listener {
     public void onDisable() {
 
         getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 插件已关闭!");
+        
+        // 关闭HTTP服务器
+        stopHttpServer();
         
         // 关闭数据库连接
         closeDatabaseConnections();
@@ -249,38 +261,201 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby] 数据库连接信息已清理!");
     }
     
+    /**
+     * 初始化Z-Pay支付配置
+     */
+    private void initializeZPayConfig() {
+        try {
+            FileConfiguration config = getConfig();
+            
+            // 读取Z-Pay配置
+            zPayPid = config.getString("zpay.pid", "");
+            zPayKey = config.getString("zpay.key", "");
+            zPayNotifyUrl = config.getString("zpay.notify_url", "");
+            zPayReturnUrl = config.getString("zpay.return_url", "");
+            zPayHttpPort = config.getInt("zpay.http_port", 8080); // 默认端口8080
+            
+            // 检查配置是否完整
+            if (zPayPid.isEmpty() || zPayKey.isEmpty() || zPayNotifyUrl.isEmpty() || zPayReturnUrl.isEmpty()) {
+                getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] Z-Pay支付配置不完整，请检查config.yml文件!");
+                return;
+            }
+            
+            // 创建ZPayUtil实例
+            zPayUtil = new ZPayUtil(zPayPid, zPayKey, zPayNotifyUrl, zPayReturnUrl);
+            getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby] Z-Pay支付系统初始化成功!");
+        } catch (Exception e) {
+            getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] Z-Pay支付配置初始化失败: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * 启动HTTP服务器以处理支付回调
+     */
+    private void startHttpServer() {
+        try {
+            // 使用配置文件中指定的端口
+            int port = zPayHttpPort;
+            
+            httpServer = HttpServer.create(new InetSocketAddress(port), 0);
+            httpServer.createContext("/zpay/notify", new PaymentNotificationHandler());
+            httpExecutor = Executors.newCachedThreadPool();
+            httpServer.setExecutor(httpExecutor);
+            httpServer.start();
+            getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby] HTTP服务器已启动，端口: " + port);
+        } catch (Exception e) {
+            getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 启动HTTP服务器失败: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
     /**
-     * 初始化Z-Pay支付配置
+     * 关闭HTTP服务器
      */
-    private void initializeZPayConfig() {
-        try {
-            FileConfiguration config = getConfig();
-            
-            // 读取Z-Pay配置
-            zPayPid = config.getString("zpay.pid", "");
-            zPayKey = config.getString("zpay.key", "");
-            zPayNotifyUrl = config.getString("zpay.notify_url", "");
-            zPayReturnUrl = config.getString("zpay.return_url", "");
-            
-            // 检查配置是否完整
-            if (zPayPid.isEmpty() || zPayKey.isEmpty() || zPayNotifyUrl.isEmpty() || zPayReturnUrl.isEmpty()) {
-                getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] Z-Pay支付配置不完整，请检查config.yml文件!");
-                return;
-            }
-            
-            // 创建ZPayUtil实例
-            zPayUtil = new ZPayUtil(zPayPid, zPayKey, zPayNotifyUrl, zPayReturnUrl);
-            getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby] Z-Pay支付系统初始化成功!");
-        } catch (Exception e) {
-            getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] Z-Pay支付配置初始化失败: " + e.getMessage());
-            e.printStackTrace();
+    private void stopHttpServer() {
+        if (httpServer != null) {
+            httpServer.stop(0);
+            getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby] HTTP服务器已关闭");
+        }
+        if (httpExecutor != null) {
+            httpExecutor.shutdown();
         }
     }
     
     /**
+     * 支付通知处理器
+     */
+    class PaymentNotificationHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if ("GET".equals(exchange.getRequestMethod()) || "POST".equals(exchange.getRequestMethod())) {
+                // 解析URL参数（GET请求参数在URL中，POST请求也可能有URL参数）
+                Map<String, String> params = parseQueryString(exchange.getRequestURI().getRawQuery());
+                
+                // 如果是POST请求，也要读取POST数据
+                if ("POST".equals(exchange.getRequestMethod())) {
+                    java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(exchange.getRequestBody()));
+                    String line;
+                    StringBuilder requestBody = new StringBuilder();
+                    while ((line = reader.readLine()) != null) {
+                        requestBody.append(line);
+                    }
+                    reader.close();
+                    
+                    // 解析POST参数并合并到params中
+                    Map<String, String> postParams = parseQueryString(requestBody.toString());
+                    params.putAll(postParams);
+                }
+                
+                try {
+                    // 验证签名
+                    if (zPayUtil.verifySign(new HashMap<>(params))) {
+                        // 处理支付成功
+                        String tradeNo = params.get("trade_no");
+                        String outTradeNo = params.get("out_trade_no");
+                        String param = params.get("param");
+                        // 根据文档，使用trade_status参数来判断支付状态
+                        String status = params.get("trade_status");
+                        
+                        // 根据文档，只有TRADE_SUCCESS是成功状态
+                        if ("TRADE_SUCCESS".equals(status)) {
+                            // 提取玩家名称
+                            if (param != null && param.startsWith("player:")) {
+                                String playerName = param.substring(7); // 去掉"player:"前缀
+                                
+                                // 设置玩家VIP权限
+                                Player player = Bukkit.getPlayer(playerName);
+                                if (player != null && player.isOnline()) {
+                                    // 在主线程中设置VIP权限
+                                    Bukkit.getScheduler().runTask(NekoLobby.this, () -> {
+                                        setPlayerVipGroup(player);
+                                        player.sendMessage(ChatColor.GREEN + "支付成功！您的VIP权益已自动激活，有效期为一个月！");
+                                        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby] 玩家 " + playerName + " 的VIP权限已自动激活");
+                                    });
+                                } else {
+                                    // 玩家不在线，记录到数据库，等待玩家上线时处理
+                                    handleOfflineVipPurchase(playerName);
+                                }
+                            } else {
+                                getServer().getConsoleSender().sendMessage(ChatColor.YELLOW + "[NekoLobby] 无法解析支付参数: " + param);
+                            }
+                        } else {
+                            // 非支付成功状态，记录日志
+                            getServer().getConsoleSender().sendMessage(ChatColor.YELLOW + "[NekoLobby] 收到非成功支付状态的回调: " + status + ", 参数: " + params);
+                        }
+                        
+                        // 发送成功响应 - 确保返回纯文本"success"字符串
+                        String response = "success";
+                        exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=utf-8");
+                        exchange.sendResponseHeaders(200, response.getBytes("UTF-8").length);
+                        OutputStream os = exchange.getResponseBody();
+                        os.write(response.getBytes("UTF-8"));
+                        os.close();
+                    } else {
+                        // 验证失败
+                        getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 支付回调签名验证失败，参数: " + params);
+                        String response = "fail";
+                        exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=utf-8");
+                        exchange.sendResponseHeaders(200, response.getBytes("UTF-8").length);
+                        OutputStream os = exchange.getResponseBody();
+                        os.write(response.getBytes("UTF-8"));
+                        os.close();
+                    }
+                } catch (Exception e) {
+                    getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 处理支付回调时出错: " + e.getMessage());
+                    e.printStackTrace();
+                    String response = "error";
+                    exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=utf-8");
+                    exchange.sendResponseHeaders(500, response.getBytes("UTF-8").length);
+                    OutputStream os = exchange.getResponseBody();
+                    os.write(response.getBytes("UTF-8"));
+                    os.close();
+                }
+            } else {
+                // 不支持的方法
+                String response = "Only GET or POST method allowed";
+                exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=utf-8");
+                exchange.sendResponseHeaders(405, response.getBytes("UTF-8").length);
+                OutputStream os = exchange.getResponseBody();
+                os.write(response.getBytes("UTF-8"));
+                os.close();
+            }
+        }
+    }
+    
+    /**
+     * 解析查询字符串
+     */
+    private Map<String, String> parseQueryString(String query) {
+        Map<String, String> result = new HashMap<>();
+        if (query != null && !query.isEmpty()) {
+            String[] pairs = query.split("&");
+            for (String pair : pairs) {
+                int idx = pair.indexOf("=");
+                if (idx > 0) {
+                    try {
+                        String key = java.net.URLDecoder.decode(pair.substring(0, idx), "UTF-8");
+                        String value = java.net.URLDecoder.decode(pair.substring(idx + 1), "UTF-8");
+                        result.put(key, value);
+                    } catch (Exception e) {
+                        getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 解析查询字符串时出错: " + e.getMessage());
+                    }
+                } else if (!pair.isEmpty()) {
+                    try {
+                        String key = java.net.URLDecoder.decode(pair, "UTF-8");
+                        result.put(key, "");
+                    } catch (Exception e) {
+                        getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 解析查询字符串时出错: " + e.getMessage());
+                    }
+                }
+            }
+        }
+        return result;
+    }
 
+    /**
      * 获取玩家的权限组名称
-
      */
 
     private String getPlayerGroup(Player player) {
@@ -1588,31 +1763,24 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         Material expBottleMat = Material.matchMaterial("EXP_BOTTLE");
 
 
-
         if ((expBottleMat != null && clickedItem.getType() == expBottleMat) || clickedItem.getType() == Material.matchMaterial("EXP_BOTTLE")) {
 
             getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] Player " + player.getName() + " clicked exp bottle item");
 
 
-
             player.sendMessage(ChatColor.GREEN + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
-
 
 
             player.sendMessage(ChatColor.LIGHT_PURPLE + "                   等级信息");
 
 
-
             player.sendMessage(ChatColor.GREEN + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
-
 
 
             player.sendMessage(ChatColor.YELLOW + "  ✿ 当前等级: " + ChatColor.WHITE + level);
 
 
-
             player.sendMessage(ChatColor.YELLOW + "  ✿ 经验值: " + ChatColor.WHITE + experience);
-
 
 
             player.sendMessage(ChatColor.GREEN + "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★");
@@ -1657,8 +1825,6 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
 
         Material diamondSwordMat = Material.matchMaterial("DIAMOND_SWORD");
-
-
 
         if ((diamondSwordMat != null && clickedItem.getType() == diamondSwordMat) || clickedItem.getType() == Material.matchMaterial("DIAMOND_SWORD")) {
 
@@ -1964,95 +2130,11 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
 
 
-
-
-
-
-
-
-
-
         // 现金支付VIP购买（槽位22）
 
 
 
-        if (e.getSlot() == 22) { // VIP权益选项（现金支付）
-
-
-
-            player.sendMessage(ChatColor.YELLOW + "正在为您生成Z-Pay支付二维码...");
-
-
-
-            // 创建Z-Pay支付订单
-
-
-
-            createZPayOrder(player);
-
-
-
-            return;
-
-
-
-        }
-
-
-
-
-        // 现金支付VIP购买（槽位22）
-
-        if (e.getSlot() == 22) { // VIP权益选项（现金支付）
-
-            player.sendMessage(ChatColor.YELLOW + "正在为您生成Z-Pay支付二维码...");
-
-            // 创建Z-Pay支付订单
-
-            createZPayOrder(player);
-
-            return;
-
-        }
-
-
-
-
-
-
-
-        // 确认支付完成（槽位24）
-
-
-
-        if (e.getSlot() == 24) { // 确认支付完成按钮
-
-
-
-            player.sendMessage(ChatColor.YELLOW + "请使用 /vippay confirm 命令确认支付完成并激活VIP权限。");
-
-
-
-            player.sendMessage(ChatColor.GREEN + "提示: 在聊天框中输入 " + ChatColor.AQUA + "/vippay confirm" + ChatColor.GREEN + " 来激活VIP权限。");
-
-
-
-            return;
-
-
-
-        }
-
-
-
-
-        // 现金支付VIP购买（槽位22）
-
-
-
-        if (e.getSlot() == 22) { // VIP权益选项（现金支付）
-
-
+        if (e.getSlot() == 22) { // VIP权益选项（现金支付） {
 
             player.sendMessage(ChatColor.YELLOW + "正在为您生成Z-Pay支付二维码...");
 
@@ -2082,7 +2164,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
 
 
-        if (e.getSlot() == 24) { // 确认支付完成按钮
+        if (e.getSlot() == 24) { // 确认支付完成按钮 {
 
 
 
@@ -2895,7 +2977,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
         
 
-        // 支付确认按钮
+        // 支付确认按钮 - 现在不再需要这个按钮，因为支付成功后会自动激活VIP
 
         Material emeraldMat = Material.matchMaterial("EMERALD");
 
@@ -2907,17 +2989,17 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
         ItemMeta confirmMeta = confirmItem.getItemMeta();
 
-        confirmMeta.setDisplayName(ChatColor.GREEN + "✦ " + ChatColor.BOLD + "确认支付完成" + ChatColor.GREEN + " ✦");
+        confirmMeta.setDisplayName(ChatColor.GREEN + "✦ " + ChatColor.BOLD + "支付已完成" + ChatColor.GREEN + " ✦");
 
         List<String> confirmLore = new ArrayList<>();
 
-        confirmLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "如果您已完成现金支付" + ChatColor.WHITE + " ✿");
+        confirmLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "支付成功后VIP权限会自动激活" + ChatColor.WHITE + " ✿");
 
-        confirmLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "请点击此按钮激活VIP权限" + ChatColor.WHITE + " ✿");
+        confirmLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "无需手动点击" + ChatColor.WHITE + " ✿");
 
         confirmLore.add("");
 
-        confirmLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "仅在支付完成后使用" + ChatColor.YELLOW + " ❁");
+        confirmLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "系统自动处理" + ChatColor.YELLOW + " ❁");
 
         confirmMeta.setLore(confirmLore);
 
@@ -2963,7 +3045,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
         headLore.add("");
 
-        headLore.add(ChatColor.LIGHT_PURPLE + "❀ " + ChatColor.BOLD + "点击刷新信息" + ChatColor.LIGHT_PURPLE + " ❀");
+        headLore.add(ChatColor.LIGHT_PURPLE + "❀ " + ChatColor.BOLD + "点击刷新信息" + ChatColor.LIGHT_PURPLE + " ❁");
 
         headMeta.setLore(headLore);
 
@@ -3075,8 +3157,6 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
 
 
-            
-
 
 
         if (clickedItem == null || clickedItem.getType() == Material.AIR || isGlassPane) {
@@ -3146,54 +3226,40 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             player.sendMessage(ChatColor.GREEN + "VIP权益购买成功！");
 
 
-
             // 重新打开GUI以刷新信息
 
 
 
-            openRechargeGUI(player);
-
-
-
-            return;
-
-
-
-        }
-
-
-
-
-
-
-
-        // 现金支付VIP购买（槽位22）
-
-        if (e.getSlot() == 22) { // VIP权益选项（现金支付）
-
-            player.sendMessage(ChatColor.YELLOW + "正在为您生成Z-Pay支付二维码...");
-
-            // 创建Z-Pay支付订单
-
-            createZPayOrder(player);
-
-            return;
-
-        }
-
-
-
-        // 确认支付完成（槽位24）
+            openRechargeGUI(player);
 
-        if (e.getSlot() == 24) { // 确认支付完成按钮
 
-            player.sendMessage(ChatColor.YELLOW + "请使用 /vippay confirm 命令确认支付完成并激活VIP权限。");
 
-            player.sendMessage(ChatColor.GREEN + "提示: 在聊天框中输入 " + ChatColor.AQUA + "/vippay confirm" + ChatColor.GREEN + " 来激活VIP权限。");
+            return;
+
+
+        }
+
+
+
+
+
+
+
+        // 现金支付VIP购买（槽位22）
+
+        if (e.getSlot() == 22) { // VIP权益选项（现金支付）
+
+            player.sendMessage(ChatColor.YELLOW + "正在为您生成Z-Pay支付二维码...");
+
+            // 创建Z-Pay支付订单
+
+            createZPayOrder(player);
 
             return;
 
         }
+
+
 
 
 
