@@ -23,18 +23,35 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
-public class ZPayUtil {
-    
-    // Z-Pay接口配置
-    private String apiUrl = "https://zpayz.cn/";
-    private String pid; // 商户ID
-    private String key; // 商户密钥
-    private String notifyUrl; // 异步通知地址
-    
-    public ZPayUtil(String pid, String key, String notifyUrl) {
-        this.pid = pid;
-        this.key = key;
-        this.notifyUrl = notifyUrl;
+public class ZPayUtil {
+    
+    // 用于存储最后的错误信息
+    private String lastError = "";
+    
+    // Z-Pay接口配置
+    private String apiUrl = "https://zpayz.cn/";
+    private String pid; // 商户ID
+    private String key; // 商户密钥
+    private String notifyUrl; // 异步通知地址
+    
+    public ZPayUtil(String pid, String key, String notifyUrl) {
+        this.pid = pid;
+        this.key = key;
+        this.notifyUrl = notifyUrl;
+    }
+    
+    /**
+     * 获取最后的错误信息
+     */
+    public String getLastError() {
+        return lastError;
+    }
+    
+    /**
+     * 设置最后的错误信息
+     */
+    private void setLastError(String error) {
+        this.lastError = error;
     }
     
     /**
@@ -160,6 +177,9 @@ public class ZPayUtil {
      */
     public String getPaymentQRCodeUrl(String orderNo, String name, String money, String type, String ip, String param) {
         try {
+            // 清除之前的错误信息
+            setLastError("");
+            
             String url = apiUrl + "mapi.php";
             
             Map<String, String> params = new HashMap<>();
@@ -244,6 +264,20 @@ public class ZPayUtil {
             } else {
                 Bukkit.getLogger().warning("[ZPayUtil] 支付订单创建失败或响应格式不正确");
                 Bukkit.getLogger().info("[ZPayUtil] 响应码: " + (result != null ? result.get("code") : "null"));
+                // 记录错误信息
+                if (result != null) {
+                    String errorMsg = "";
+                    if (result.containsKey("msg")) {
+                        errorMsg = result.get("msg").toString();
+                    } else if (result.containsKey("message")) {
+                        errorMsg = result.get("message").toString();
+                    } else {
+                        errorMsg = "未知错误: " + result.toString();
+                    }
+                    setLastError(errorMsg);
+                } else {
+                    setLastError("无法解析响应数据");
+                }
             }
             
             return null;
@@ -251,6 +285,8 @@ public class ZPayUtil {
         } catch (Exception e) {
             Bukkit.getLogger().severe("获取支付二维码失败: " + e.getMessage());
             e.printStackTrace();
+            // 记录错误信息
+            setLastError("系统错误: " + e.getMessage());
             return null;
         }
     }
@@ -363,6 +399,8 @@ public class ZPayUtil {
         } catch (Exception e) {
             Bukkit.getLogger().severe("[ZPayUtil] JSON解析错误: " + e.getMessage());
             e.printStackTrace();
+            // 记录错误信息
+            setLastError("JSON解析错误: " + e.getMessage());
         }
         
         return result;

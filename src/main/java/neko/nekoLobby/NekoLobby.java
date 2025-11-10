@@ -93,16 +93,26 @@ public final class NekoLobby extends JavaPlugin implements Listener {
     private LuckPerms luckPerms;
     private boolean placeholderAPIEnabled;
     
-    // Z-Pay支付工具
-
-    private ZPayUtil zPayUtil;
-
-    private String zPayPid;
-
-    private String zPayKey;
-
-    private String zPayNotifyUrl;
-
+    // Z-Pay支付工具
+
+
+
+    private ZPayUtil zPayUtil;
+
+
+
+    private String zPayPid;
+
+
+
+    private String zPayKey;
+
+
+
+    private String zPayNotifyUrl;
+
+
+
     private int zPayHttpPort; // HTTP服务器端口
 
     
@@ -188,6 +198,51 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         } else {
 
             player.sendMessage(ChatColor.RED + "创建支付订单失败：无法获取支付二维码");
+        }
+    }
+
+    /**
+     * 创建Z-Pay支付订单
+     */
+
+    private void createZPayOrder(Player player, String type) {
+
+        if (zPayUtil == null) {
+
+            player.sendMessage(ChatColor.RED + "支付系统未初始化，请联系管理员！");
+
+            return;
+
+        }
+        
+        // 生成订单号
+        String orderNo = zPayUtil.generateOrderNo();
+        String playerName = player.getName();
+        String subject = "梦幻次元-VIP权益(1个月)";
+        String amount = "15.00"; // 15元
+        String ip = player.getAddress() != null ? player.getAddress().getAddress().getHostAddress() : "127.0.0.1";
+        String param = "player:" + playerName; // 附加参数，包含玩家名称用于后续识别
+        
+        // 创建支付订单并获取二维码URL
+        String qrCodeUrl = zPayUtil.getPaymentQRCodeUrl(orderNo, subject, amount, type, ip, param);
+        
+        if (qrCodeUrl != null && !qrCodeUrl.isEmpty()) {
+            // 成功获取二维码URL，显示在地图上
+            player.sendMessage(ChatColor.GREEN + "VIP支付订单创建成功！");
+            player.sendMessage(ChatColor.YELLOW + "正在生成支付二维码地图...");
+            player.closeInventory(); // 关闭GUI
+            
+            // 在单独的线程中处理二维码地图渲染，避免阻塞主线程
+            Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
+                QRCodeMapRenderer.showQRCodeOnMap(player, qrCodeUrl);
+            });
+        } else {
+            player.sendMessage(ChatColor.RED + "创建支付订单失败：无法获取支付二维码");
+            // 添加更多详细错误信息
+            String errorDetails = zPayUtil.getLastError();
+            if (errorDetails != null && !errorDetails.isEmpty()) {
+                player.sendMessage(ChatColor.RED + "错误详情: " + errorDetails);
+            }
         }
     }
 
@@ -303,8 +358,10 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
             
 
-            // 创建ZPayUtil实例
-
+            // 创建ZPayUtil实例
+
+
+
             zPayUtil = new ZPayUtil(zPayPid, zPayKey, zPayNotifyUrl);
 
             getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby] Z-Pay支付系统初始化成功!");
@@ -593,7 +650,7 @@ player.sendMessage("");
 
                 // 不支持的方法
 
-                String response = "Only GET or POST method allowed";
+                String response = "错误的请求方法！";
 
                 exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=utf-8");
 
@@ -672,7 +729,6 @@ player.sendMessage("");
                 primaryGroup = PlaceholderAPI.setPlaceholders(player, primaryGroup);
 
             }
-
             // 解析颜色代码
 
             primaryGroup = ChatColor.translateAlternateColorCodes('&', primaryGroup);
@@ -817,7 +873,6 @@ player.sendMessage("");
             // 使用大小写不敏感的查询
 
             String query = "SELECT username, lastlogin, regdate, email FROM authme WHERE LOWER(username) = LOWER(?)";
-
             stmt = conn.prepareStatement(query);
 
             stmt.setString(1, playerName);
@@ -2890,6 +2945,23 @@ player.sendMessage("");
         rechargeGUI.setItem(22, payVipItem);
 
 
+        // VIP购买微信
+        Material redstoneMat = Material.matchMaterial("REDSTONE");
+        ItemStack wxpayVipItem = redstoneMat != null ?
+            new ItemStack(redstoneMat) :
+            new ItemStack(Material.matchMaterial("REDSTONE")); // Fallback
+        ItemMeta wxpayVipMeta = wxpayVipItem.getItemMeta();
+        wxpayVipMeta.setDisplayName(ChatColor.GREEN + "✦ " + ChatColor.BOLD + "VIP权益 (微信)" + ChatColor.GREEN + " ✦");
+        List<String> wxpayVipLore = new ArrayList<>();
+        wxpayVipLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "15元" + ChatColor.WHITE + " ✿");
+        wxpayVipLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
+        wxpayVipLore.add("");
+        wxpayVipLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击用微信购买VIP权限" + ChatColor.YELLOW + " ❁");
+        wxpayVipLore.add("");
+        wxpayVipLore.add(ChatColor.RED + "⚠ " + ChatColor.BOLD + "需要真实支付" + ChatColor.RED + " ⚠");
+        wxpayVipMeta.setLore(wxpayVipLore);
+        wxpayVipItem.setItemMeta(wxpayVipMeta);
+        rechargeGUI.setItem(24, wxpayVipItem);
 
 
         // 玩家信息显示
@@ -3126,25 +3198,21 @@ player.sendMessage("");
 
 
 
-
-
-        // 现金支付VIP购买（槽位22）
-
-        if (e.getSlot() == 22) { // VIP权益选项（现金支付）
-
-            player.sendMessage(ChatColor.YELLOW + "正在为您生成Z-Pay支付二维码...");
-
-            // 创建Z-Pay支付订单
-
-            createZPayOrder(player);
-
+        // 支付宝支付VIP购买（槽位22）
+        if (e.getSlot() == 22) { // 支付宝VIP权益选项（现金支付） {
+            player.sendMessage(ChatColor.YELLOW + "正在为您生成支付宝支付二维码...");
+            // 创建Z-Pay支付宝支付订单
+            createZPayOrder(player, "alipay");
             return;
-
         }
 
-
-
-
+        // 微信支付VIP购买（槽位24）
+        if (e.getSlot() == 24) { // 微信VIP权益选项（现金支付） {
+            player.sendMessage(ChatColor.YELLOW + "正在为您生成微信支付二维码...");
+            // 创建Z-Pay微信支付订单
+            createZPayOrder(player, "wxpay");
+            return;
+        }
 
         // 如果点击的是玩家信息头颅，刷新GUI（槽位49）
 
