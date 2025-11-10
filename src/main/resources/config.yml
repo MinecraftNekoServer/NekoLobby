@@ -27,9 +27,9 @@ database:
 # Z-Pay支付配置
 zpay:
   # 商户ID
-  pid: "2025110723453452"
+  pid: ""
   # 商户密钥
-  key: "2AmiPprT4D1d7Eyi5DNFNsi1BdnqFYPR"
+  key: ""
   # 异步通知地址 (支付完成后Z-Pay会向此地址发送通知，如无可用本地地址)
-  notify_url: "https://lobby.cnmsb.xin/zpay/notify"
+  notify_url: ""
   http_port: 9999
