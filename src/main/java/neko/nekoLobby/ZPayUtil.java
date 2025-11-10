@@ -216,17 +216,36 @@ public class ZPayUtil {
             
             // 解析响应
             String responseStr = response.toString();
-            Map<String, Object> result = parseJson(responseStr);
+            Bukkit.getLogger().info("[ZPayUtil] 收到的原始响应: " + responseStr);
+            
+            // 检查是否是被引号包围的JSON字符串
+            String processedResponse = responseStr.trim();
+            if (processedResponse.startsWith("\"") && processedResponse.endsWith("\"")) {
+                // 移除外层引号并处理转义字符
+                processedResponse = processedResponse.substring(1, processedResponse.length() - 1);
+                processedResponse = processedResponse.replace("\\\"", "\"").replace("\\\\", "\\");
+                Bukkit.getLogger().info("[ZPayUtil] 处理后的响应: " + processedResponse);
+            }
+            
+            Map<String, Object> result = parseJson(processedResponse);
+            Bukkit.getLogger().info("[ZPayUtil] 解析后的结果: " + result);
             
             if (result != null && result.containsKey("code") && "1".equals(result.get("code").toString())) {
-                // 返回二维码URL
-                if (result.containsKey("qrcode")) {
-                    return (String) result.get("qrcode");
-                } else if (result.containsKey("img")) {
-                    return (String) result.get("img");
-                } else if (result.containsKey("payurl")) {
-                    return (String) result.get("payurl");
+                Bukkit.getLogger().info("[ZPayUtil] 支付订单创建成功");
+                // 根据您的说明，只有img才是付款二维码的url
+                if (result.containsKey("img")) {
+                    String imgUrl = (String) result.get("img");
+                    // 处理URL中的转义字符
+                    imgUrl = imgUrl.replace("\\/", "/");
+                    Bukkit.getLogger().info("[ZPayUtil] 使用img字段作为二维码URL: " + imgUrl);
+                    return imgUrl;
+                } else {
+                    Bukkit.getLogger().warning("[ZPayUtil] 响应中未找到img字段");
+                    Bukkit.getLogger().info("[ZPayUtil] 可用字段: " + result.keySet());
                 }
+            } else {
+                Bukkit.getLogger().warning("[ZPayUtil] 支付订单创建失败或响应格式不正确");
+                Bukkit.getLogger().info("[ZPayUtil] 响应码: " + (result != null ? result.get("code") : "null"));
             }
             
             return null;
@@ -261,35 +280,91 @@ public class ZPayUtil {
         // 简单的JSON解析，实际项目中建议使用专门的JSON库
         Map<String, Object> result = new HashMap<>();
         
-        // 移除首尾的花括号
-        jsonStr = jsonStr.trim();
-        if (jsonStr.startsWith("{") && jsonStr.endsWith("}")) {
-            jsonStr = jsonStr.substring(1, jsonStr.length() - 1);
-        }
-        
-        // 按逗号分割
-        String[] pairs = jsonStr.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)"); // 处理引号内的逗号
-        
-        for (String pair : pairs) {
-            pair = pair.trim();
-            if (pair.isEmpty()) continue;
-            
-            int colonIndex = pair.indexOf(':');
-            if (colonIndex == -1) continue;
-            
-            String key = pair.substring(0, colonIndex).trim();
-            String value = pair.substring(colonIndex + 1).trim();
-            
-            // 移除键和值的引号
-            if (key.startsWith("\"") && key.endsWith("\"")) {
-                key = key.substring(1, key.length() - 1);
+        try {
+            // 移除首尾的花括号和可能的引号
+            jsonStr = jsonStr.trim();
+            if (jsonStr.startsWith("\"") && jsonStr.endsWith("\"")) {
+                jsonStr = jsonStr.substring(1, jsonStr.length() - 1);
+                // 处理转义字符
+                jsonStr = jsonStr.replace("\\\"", "\"");
+                jsonStr = jsonStr.replace("\\\\", "\\");
             }
             
-            if (value.startsWith("\"") && value.endsWith("\"")) {
-                value = value.substring(1, value.length() - 1);
+            if (jsonStr.startsWith("{") && jsonStr.endsWith("}")) {
+                jsonStr = jsonStr.substring(1, jsonStr.length() - 1);
             }
             
-            result.put(key, value);
+            // 按逗号分割，但要处理引号内的逗号
+            List<String> pairs = new ArrayList<>();
+            int braceLevel = 0;
+            boolean inQuotes = false;
+            StringBuilder currentPair = new StringBuilder();
+            
+            for (int i = 0; i < jsonStr.length(); i++) {
+                char c = jsonStr.charAt(i);
+                
+                if (c == '"' && (i == 0 || jsonStr.charAt(i-1) != '\\')) {
+                    inQuotes = !inQuotes;
+                } else if (c == '{' && !inQuotes) {
+                    braceLevel++;
+                } else if (c == '}' && !inQuotes) {
+                    braceLevel--;
+                }
+                
+                if (c == ',' && braceLevel == 0 && !inQuotes) {
+                    pairs.add(currentPair.toString().trim());
+                    currentPair.setLength(0); // 清空StringBuilder
+                } else {
+                    currentPair.append(c);
+                }
+            }
+            
+            if (currentPair.length() > 0) {
+                pairs.add(currentPair.toString().trim());
+            }
+            
+            for (String pair : pairs) {
+                pair = pair.trim();
+                if (pair.isEmpty()) continue;
+                
+                // 查找冒号，但要跳过在引号内的冒号
+                int colonIndex = -1;
+                boolean inQuote = false;
+                for (int i = 0; i < pair.length(); i++) {
+                    if (pair.charAt(i) == '"' && (i == 0 || pair.charAt(i-1) != '\\')) {
+                        inQuote = !inQuote;
+                    } else if (pair.charAt(i) == ':' && !inQuote) {
+                        colonIndex = i;
+                        break;
+                    }
+                }
+                
+                if (colonIndex == -1) continue;
+                
+                String key = pair.substring(0, colonIndex).trim();
+                String value = pair.substring(colonIndex + 1).trim();
+                
+                // 移除键的引号
+                if (key.startsWith("\"") && key.endsWith("\"")) {
+                    key = key.substring(1, key.length() - 1);
+                    // 处理键中的转义字符
+                    key = key.replace("\\\"", "\"");
+                    key = key.replace("\\\\", "\\");
+                }
+                
+                // 移除值的引号
+                if (value.startsWith("\"") && value.endsWith("\"")) {
+                    value = value.substring(1, value.length() - 1);
+                    // 处理值中的转义字符
+                    value = value.replace("\\\"", "\"");
+                    value = value.replace("\\\\", "\\");
+                }
+                
+                result.put(key, value);
+            }
+        } catch (Exception e) {
+            Bukkit.getLogger().severe("[ZPayUtil] JSON解析错误: " + e.getMessage());
+            e.printStackTrace();
         }
         
         return result;

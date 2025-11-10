@@ -158,23 +158,20 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         // 创建支付订单并获取二维码URL
         String qrCodeUrl = zPayUtil.getPaymentQRCodeUrl(orderNo, subject, amount, type, ip, param);
         
-        if (qrCodeUrl != null && !qrCodeUrl.isEmpty()) {
-            // 成功获取二维码URL，显示在地图上
-            player.sendMessage(ChatColor.GREEN + "VIP支付订单创建成功！");
-            player.sendMessage(ChatColor.YELLOW + "正在生成支付二维码地图...");
-            player.closeInventory(); // 关闭GUI
-            
-            // 在单独的线程中处理二维码地图渲染，避免阻塞主线程
-
-            Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
-
-                QRCodeMapRenderer.showQRCodeOnMap(player, qrCodeUrl);
-
-            });
-        } else {
-
-            player.sendMessage(ChatColor.RED + "创建支付订单失败：无法获取支付二维码");
-
+        if (qrCodeUrl != null && !qrCodeUrl.isEmpty()) {
+            // 成功获取二维码URL，显示在地图上
+            player.sendMessage(ChatColor.GREEN + "VIP支付订单创建成功！");
+            player.sendMessage(ChatColor.YELLOW + "正在生成支付二维码地图...");
+            player.closeInventory(); // 关闭GUI
+            
+            // 在单独的线程中处理二维码地图渲染，避免阻塞主线程
+            Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
+                QRCodeMapRenderer.showQRCodeOnMap(player, qrCodeUrl);
+            });
+        } else {
+
+            player.sendMessage(ChatColor.RED + "创建支付订单失败：无法获取支付二维码");
+
         }
 
     }
