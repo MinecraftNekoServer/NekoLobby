@@ -3137,109 +3137,109 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             rechargeGUI.setItem(slot, blueGlassPane.clone());
         }
 
-        // VIP权益选项
-        Material diamondMat = Material.matchMaterial("DIAMOND");
-        ItemStack vipItem = diamondMat != null ?
-                new ItemStack(diamondMat) :
-                new ItemStack(Material.matchMaterial("DIAMOND"));
-        ItemMeta vipMeta = vipItem.getItemMeta();
-        vipMeta.setDisplayName(ChatColor.GOLD + "✦ " + ChatColor.BOLD + "VIP权益" + ChatColor.GOLD + " ✦");
-        List<String> vipLore = new ArrayList<>();
-        vipLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "300猫粮" + ChatColor.WHITE + " ✿");
-        vipLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
-        vipLore.add("");
-        vipLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击购买VIP权限" + ChatColor.YELLOW + " ❁");
-        vipMeta.setLore(vipLore);
-        vipItem.setItemMeta(vipMeta);
-        rechargeGUI.setItem(20, vipItem);
-
-        // MVP权益选项
-        Material emeraldMat = Material.matchMaterial("EMERALD");
-        ItemStack mvpItem = emeraldMat != null ?
-                new ItemStack(emeraldMat) :
-                new ItemStack(Material.matchMaterial("EMERALD"));
-        ItemMeta mvpMeta = mvpItem.getItemMeta();
-        mvpMeta.setDisplayName(ChatColor.AQUA + "✦ " + ChatColor.BOLD + "MVP权益" + ChatColor.AQUA + " ✦");
-        List<String> mvpLore = new ArrayList<>();
-        mvpLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "600猫粮" + ChatColor.WHITE + " ✿");
-        mvpLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
-        mvpLore.add("");
-        mvpLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击购买MVP权限" + ChatColor.YELLOW + " ❁");
-        mvpMeta.setLore(mvpLore);
-        mvpItem.setItemMeta(mvpMeta);
-        rechargeGUI.setItem(21, mvpItem);
-
-        // VIP购买支付宝
-        Material goldIngotMat = Material.matchMaterial("GOLD_INGOT");
-        ItemStack payVipItem = goldIngotMat != null ?
-                new ItemStack(goldIngotMat) :
-                new ItemStack(Material.matchMaterial("GOLD_INGOT")); // Fallback
-        ItemMeta payVipMeta = payVipItem.getItemMeta();
-        payVipMeta.setDisplayName(ChatColor.GOLD + "✦ " + ChatColor.BOLD + "VIP权益 (支付宝)" + ChatColor.GOLD + " ✦");
-        List<String> payVipLore = new ArrayList<>();
-        payVipLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "15元" + ChatColor.WHITE + " ✿");
-        payVipLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
-        payVipLore.add("");
-        payVipLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击用支付宝购买VIP权限" + ChatColor.YELLOW + " ❁");
-        payVipLore.add("");
-        payVipLore.add(ChatColor.RED + "⚠ " + ChatColor.BOLD + "需要真实支付" + ChatColor.RED + " ⚠");
-        payVipMeta.setLore(payVipLore);
-        payVipItem.setItemMeta(payVipMeta);
-        rechargeGUI.setItem(22, payVipItem);
-
-        // MVP购买支付宝
-        Material goldNuggetMat = Material.matchMaterial("GOLD_NUGGET");
-        ItemStack payMvpItem = goldNuggetMat != null ?
-                new ItemStack(goldNuggetMat) :
-                new ItemStack(Material.matchMaterial("GOLD_NUGGET")); // Fallback
-        ItemMeta payMvpMeta = payMvpItem.getItemMeta();
-        payMvpMeta.setDisplayName(ChatColor.AQUA + "✦ " + ChatColor.BOLD + "MVP权益 (支付宝)" + ChatColor.AQUA + " ✦");
-        List<String> payMvpLore = new ArrayList<>();
-        payMvpLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "30元" + ChatColor.WHITE + " ✿");
-        payMvpLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
-        payMvpLore.add("");
-        payMvpLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击用支付宝购买MVP权限" + ChatColor.YELLOW + " ❁");
-        payMvpLore.add("");
-        payMvpLore.add(ChatColor.RED + "⚠ " + ChatColor.BOLD + "需要真实支付" + ChatColor.RED + " ⚠");
-        payMvpMeta.setLore(payMvpLore);
-        payMvpItem.setItemMeta(payMvpMeta);
-        rechargeGUI.setItem(23, payMvpItem);
-
-        // VIP购买微信
-        Material redstoneMat = Material.matchMaterial("REDSTONE");
-        ItemStack wxpayVipItem = redstoneMat != null ?
-                new ItemStack(redstoneMat) :
-                new ItemStack(Material.matchMaterial("REDSTONE")); // Fallback
-        ItemMeta wxpayVipMeta = wxpayVipItem.getItemMeta();
-        wxpayVipMeta.setDisplayName(ChatColor.GREEN + "✦ " + ChatColor.BOLD + "VIP权益 (微信)" + ChatColor.GREEN + " ✦");
-        List<String> wxpayVipLore = new ArrayList<>();
-        wxpayVipLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "15元" + ChatColor.WHITE + " ✿");
-        wxpayVipLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
-        wxpayVipLore.add("");
-        wxpayVipLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击用微信购买VIP权限" + ChatColor.YELLOW + " ❁");
-        wxpayVipLore.add("");
-        wxpayVipLore.add(ChatColor.RED + "⚠ " + ChatColor.BOLD + "需要真实支付" + ChatColor.RED + " ⚠");
-        wxpayVipMeta.setLore(wxpayVipLore);
-        wxpayVipItem.setItemMeta(wxpayVipMeta);
-        rechargeGUI.setItem(24, wxpayVipItem);
-
-        // MVP购买微信
-        Material glowstoneDustMat = Material.matchMaterial("GLOWSTONE_DUST");
-        ItemStack wxpayMvpItem = glowstoneDustMat != null ?
-                new ItemStack(glowstoneDustMat) :
-                new ItemStack(Material.matchMaterial("GLOWSTONE_DUST")); // Fallback
-        ItemMeta wxpayMvpMeta = wxpayMvpItem.getItemMeta();
-        wxpayMvpMeta.setDisplayName(ChatColor.LIGHT_PURPLE + "✦ " + ChatColor.BOLD + "MVP权益 (微信)" + ChatColor.LIGHT_PURPLE + " ✦");
-        List<String> wxpayMvpLore = new ArrayList<>();
-        wxpayMvpLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "30元" + ChatColor.WHITE + " ✿");
-        wxpayMvpLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
-        wxpayMvpLore.add("");
-        wxpayMvpLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击用微信购买MVP权限" + ChatColor.YELLOW + " ❁");
-        wxpayMvpLore.add("");
-        wxpayMvpLore.add(ChatColor.RED + "⚠ " + ChatColor.BOLD + "需要真实支付" + ChatColor.RED + " ⚠");
-        wxpayMvpMeta.setLore(wxpayMvpLore);
-        wxpayMvpItem.setItemMeta(wxpayMvpMeta);
-        rechargeGUI.setItem(25, wxpayMvpItem);
+        // VIP权益选项
+        Material diamondMat = Material.matchMaterial("DIAMOND");
+        ItemStack vipItem = diamondMat != null ?
+                new ItemStack(diamondMat) :
+                new ItemStack(Material.matchMaterial("DIAMOND"));
+        ItemMeta vipMeta = vipItem.getItemMeta();
+        vipMeta.setDisplayName(ChatColor.GOLD + "✦ " + ChatColor.BOLD + "VIP权益" + ChatColor.GOLD + " ✦");
+        List<String> vipLore = new ArrayList<>();
+        vipLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "300猫粮" + ChatColor.WHITE + " ✿");
+        vipLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
+        vipLore.add("");
+        vipLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击购买VIP权限" + ChatColor.YELLOW + " ❁");
+        vipMeta.setLore(vipLore);
+        vipItem.setItemMeta(vipMeta);
+        rechargeGUI.setItem(20, vipItem);
+
+        // VIP购买支付宝
+        Material goldIngotMat = Material.matchMaterial("GOLD_INGOT");
+        ItemStack payVipItem = goldIngotMat != null ?
+                new ItemStack(goldIngotMat) :
+                new ItemStack(Material.matchMaterial("GOLD_INGOT")); // Fallback
+        ItemMeta payVipMeta = payVipItem.getItemMeta();
+        payVipMeta.setDisplayName(ChatColor.GOLD + "✦ " + ChatColor.BOLD + "VIP权益 (支付宝)" + ChatColor.GOLD + " ✦");
+        List<String> payVipLore = new ArrayList<>();
+        payVipLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "15元" + ChatColor.WHITE + " ✿");
+        payVipLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
+        payVipLore.add("");
+        payVipLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击用支付宝购买VIP权限" + ChatColor.YELLOW + " ❁");
+        payVipLore.add("");
+        payVipLore.add(ChatColor.RED + "⚠ " + ChatColor.BOLD + "需要真实支付" + ChatColor.RED + " ⚠");
+        payVipMeta.setLore(payVipLore);
+        payVipItem.setItemMeta(payVipMeta);
+        rechargeGUI.setItem(22, payVipItem);
+
+        // VIP购买微信
+        Material redstoneMat = Material.matchMaterial("REDSTONE");
+        ItemStack wxpayVipItem = redstoneMat != null ?
+                new ItemStack(redstoneMat) :
+                new ItemStack(Material.matchMaterial("REDSTONE")); // Fallback
+        ItemMeta wxpayVipMeta = wxpayVipItem.getItemMeta();
+        wxpayVipMeta.setDisplayName(ChatColor.GREEN + "✦ " + ChatColor.BOLD + "VIP权益 (微信)" + ChatColor.GREEN + " ✦");
+        List<String> wxpayVipLore = new ArrayList<>();
+        wxpayVipLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "15元" + ChatColor.WHITE + " ✿");
+        wxpayVipLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
+        wxpayVipLore.add("");
+        wxpayVipLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击用微信购买VIP权限" + ChatColor.YELLOW + " ❁");
+        wxpayVipLore.add("");
+        wxpayVipLore.add(ChatColor.RED + "⚠ " + ChatColor.BOLD + "需要真实支付" + ChatColor.RED + " ⚠");
+        wxpayVipMeta.setLore(wxpayVipLore);
+        wxpayVipItem.setItemMeta(wxpayVipMeta);
+        rechargeGUI.setItem(24, wxpayVipItem);
+
+        // MVP权益选项
+        Material emeraldMat = Material.matchMaterial("EMERALD");
+        ItemStack mvpItem = emeraldMat != null ?
+                new ItemStack(emeraldMat) :
+                new ItemStack(Material.matchMaterial("EMERALD"));
+        ItemMeta mvpMeta = mvpItem.getItemMeta();
+        mvpMeta.setDisplayName(ChatColor.AQUA + "✦ " + ChatColor.BOLD + "MVP权益" + ChatColor.AQUA + " ✦");
+        List<String> mvpLore = new ArrayList<>();
+        mvpLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "600猫粮" + ChatColor.WHITE + " ✿");
+        mvpLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
+        mvpLore.add("");
+        mvpLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击购买MVP权限" + ChatColor.YELLOW + " ❁");
+        mvpMeta.setLore(mvpLore);
+        mvpItem.setItemMeta(mvpMeta);
+        rechargeGUI.setItem(29, mvpItem);
+
+        // MVP购买支付宝
+        Material goldNuggetMat = Material.matchMaterial("GOLD_NUGGET");
+        ItemStack payMvpItem = goldNuggetMat != null ?
+                new ItemStack(goldNuggetMat) :
+                new ItemStack(Material.matchMaterial("GOLD_NUGGET")); // Fallback
+        ItemMeta payMvpMeta = payMvpItem.getItemMeta();
+        payMvpMeta.setDisplayName(ChatColor.AQUA + "✦ " + ChatColor.BOLD + "MVP权益 (支付宝)" + ChatColor.AQUA + " ✦");
+        List<String> payMvpLore = new ArrayList<>();
+        payMvpLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "30元" + ChatColor.WHITE + " ✿");
+        payMvpLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
+        payMvpLore.add("");
+        payMvpLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击用支付宝购买MVP权限" + ChatColor.YELLOW + " ❁");
+        payMvpLore.add("");
+        payMvpLore.add(ChatColor.RED + "⚠ " + ChatColor.BOLD + "需要真实支付" + ChatColor.RED + " ⚠");
+        payMvpMeta.setLore(payMvpLore);
+        payMvpItem.setItemMeta(payMvpMeta);
+        rechargeGUI.setItem(31, payMvpItem);
+
+        // MVP购买微信
+        Material glowstoneDustMat = Material.matchMaterial("GLOWSTONE_DUST");
+        ItemStack wxpayMvpItem = glowstoneDustMat != null ?
+                new ItemStack(glowstoneDustMat) :
+                new ItemStack(Material.matchMaterial("GLOWSTONE_DUST")); // Fallback
+        ItemMeta wxpayMvpMeta = wxpayMvpItem.getItemMeta();
+        wxpayMvpMeta.setDisplayName(ChatColor.LIGHT_PURPLE + "✦ " + ChatColor.BOLD + "MVP权益 (微信)" + ChatColor.LIGHT_PURPLE + " ✦");
+        List<String> wxpayMvpLore = new ArrayList<>();
+        wxpayMvpLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "30元" + ChatColor.WHITE + " ✿");
+        wxpayMvpLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
+        wxpayMvpLore.add("");
+        wxpayMvpLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击用微信购买MVP权限" + ChatColor.YELLOW + " ❁");
+        wxpayMvpLore.add("");
+        wxpayMvpLore.add(ChatColor.RED + "⚠ " + ChatColor.BOLD + "需要真实支付" + ChatColor.RED + " ⚠");
+        wxpayMvpMeta.setLore(wxpayMvpLore);
+        wxpayMvpItem.setItemMeta(wxpayMvpMeta);
+        rechargeGUI.setItem(33, wxpayMvpItem);
 
 
         // 玩家信息显示
@@ -3318,8 +3318,24 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             return;
         }
 
-        // 使用槽位检测来处理MVP权益购买（槽位21）
-        if (e.getSlot() == 21) { // MVP权益选项
+        // 支付宝支付VIP购买（槽位22）
+        if (e.getSlot() == 22) { // 支付宝VIP权益选项（现金支付）
+            player.sendMessage(ChatColor.YELLOW + "正在为您生成支付宝支付二维码...");
+            // 创建Z-Pay支付宝支付订单
+            createZPayOrder(player, "alipay");
+            return;
+        }
+
+        // 微信支付VIP购买（槽位24）
+        if (e.getSlot() == 24) { // 微信VIP权益选项（现金支付）
+            player.sendMessage(ChatColor.YELLOW + "正在为您生成微信支付二维码...");
+            // 创建Z-Pay微信支付订单
+            createZPayOrder(player, "wxpay");
+            return;
+        }
+
+        // 使用槽位检测来处理MVP权益购买（槽位29）
+        if (e.getSlot() == 29) { // MVP权益选项
             // 检查玩家是否有足够的猫粮
             if (catFood < 600) {
                 player.sendMessage(ChatColor.RED + "猫粮不足！购买MVP权益需要600猫粮。");
@@ -3336,16 +3352,8 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             return;
         }
 
-        // 支付宝支付VIP购买（槽位22）
-        if (e.getSlot() == 22) { // 支付宝VIP权益选项（现金支付）
-            player.sendMessage(ChatColor.YELLOW + "正在为您生成支付宝支付二维码...");
-            // 创建Z-Pay支付宝支付订单
-            createZPayOrder(player, "alipay");
-            return;
-        }
-
-        // 支付宝支付MVP购买（槽位23）
-        if (e.getSlot() == 23) { // 支付宝MVP权益选项（现金支付）
+        // 支付宝支付MVP购买（槽位31）
+        if (e.getSlot() == 31) { // 支付宝MVP权益选项（现金支付）
             player.sendMessage(ChatColor.YELLOW + "正在为您生成支付宝支付二维码...");
             // 创建Z-Pay支付宝支付订单
             String orderNo = zPayUtil.generateOrderNo();
@@ -3379,16 +3387,8 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             return;
         }
 
-        // 微信支付VIP购买（槽位24）
-        if (e.getSlot() == 24) { // 微信VIP权益选项（现金支付）
-            player.sendMessage(ChatColor.YELLOW + "正在为您生成微信支付二维码...");
-            // 创建Z-Pay微信支付订单
-            createZPayOrder(player, "wxpay");
-            return;
-        }
-
-        // 微信支付MVP购买（槽位25）
-        if (e.getSlot() == 25) { // 微信MVP权益选项（现金支付）
+        // 微信支付MVP购买（槽位33）
+        if (e.getSlot() == 33) { // 微信MVP权益选项（现金支付）
             player.sendMessage(ChatColor.YELLOW + "正在为您生成微信支付二维码...");
             // 创建Z-Pay微信支付订单
             String orderNo = zPayUtil.generateOrderNo();
