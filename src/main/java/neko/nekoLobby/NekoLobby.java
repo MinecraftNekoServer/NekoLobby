@@ -1298,67 +1298,88 @@ public final class NekoLobby extends JavaPlugin implements Listener {
                 player.sendMessage(ChatColor.RED + "无效的点名称。请使用 point1 或 point2");
                 return true;
             }
-        } else if (command.getName().equalsIgnoreCase("zpay")) {
-            // 检查权限
-            if (!sender.hasPermission("nekospawn.zpay.admin")) {
-                sender.sendMessage(ChatColor.RED + "你没有权限使用此命令！");
-                return true;
-            }
-
-            if (args.length < 2 || !args[0].equalsIgnoreCase("complete")) {
-                if (args.length == 1 && args[0].equalsIgnoreCase("confirm") && sender instanceof Player) {
-                    // 管理员确认自己的支付
-                    Player player = (Player) sender;
-                    handlePaidVipPurchase(player);
-                    return true;
-                }
-                sender.sendMessage(ChatColor.RED + "用法: /zpay complete <playerName> 或 /zpay confirm");
-                return true;
-            }
-
-            String playerName = args[1];
-            Player targetPlayer = Bukkit.getPlayer(playerName);
-
-            if (targetPlayer != null) {
-                // 给玩家设置VIP权限组
-                setPlayerVipGroup(targetPlayer);
-                sender.sendMessage(ChatColor.GREEN + "已为玩家 " + playerName + " 设置VIP权限组！");
-                targetPlayer.sendMessage(ChatColor.GREEN + "VIP权益购买已处理！");
-            } else {
-                // 尝试离线设置
-                sender.sendMessage(ChatColor.YELLOW + "玩家不在线，正在处理离线VIP设置...");
-                // 对于离线玩家，我们可以记录到数据库或其他地方，待玩家上线时处理
-                handleOfflineVipPurchase(playerName);
-                sender.sendMessage(ChatColor.GREEN + "已记录 " + playerName + " 的VIP购买，下次上线时激活！");
-            }
-
-            return true;
-        } else if (command.getName().equalsIgnoreCase("vippay")) {
-            if (!(sender instanceof Player)) {
-                sender.sendMessage(ChatColor.RED + "此命令只能由玩家执行！");
-                return true;
-            }
-
-            Player player = (Player) sender;
-
-            if (args.length == 1 && args[0].equalsIgnoreCase("confirm")) {
-                if (!player.hasPermission("nekospawn.vip.pay")) {
-                    player.sendMessage(ChatColor.RED + "你没有权限使用此命令！");
-                    return true;
-                }
-
-                // 处理支付成功的VIP购买
-                handlePaidVipPurchase(player);
-                return true;
-            } else {
-                player.sendMessage(ChatColor.RED + "用法: /vippay confirm");
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @EventHandler
+        } else if (command.getName().equalsIgnoreCase("zpay")) {
+            // 检查权限
+            if (!sender.hasPermission("nekospawn.zpay.admin")) {
+                sender.sendMessage(ChatColor.RED + "你没有权限使用此命令！");
+                return true;
+            }
+            
+            if (args.length < 2 || !args[0].equalsIgnoreCase("complete")) {
+                if (args.length == 1 && args[0].equalsIgnoreCase("confirm") && sender instanceof Player) {
+                    // 管理员确认自己的支付
+                    Player player = (Player) sender;
+                    handlePaidVipPurchase(player);
+                    return true;
+                }
+                sender.sendMessage(ChatColor.RED + "用法: /zpay complete <playerName> 或 /zpay confirm");
+                return true;
+            }
+            
+            String playerName = args[1];
+            Player targetPlayer = Bukkit.getPlayer(playerName);
+            
+            if (targetPlayer != null) {
+                if (args.length >= 3 && args[2].equalsIgnoreCase("mvp")) {
+                    // 给玩家设置MVP权限组
+                    setPlayerMvpGroup(targetPlayer);
+                    sender.sendMessage(ChatColor.GREEN + "已为玩家 " + playerName + " 设置MVP权限组！");
+                    targetPlayer.sendMessage(ChatColor.GREEN + "MVP权益购买已处理！");
+                } else {
+                    // 给玩家设置VIP权限组
+                    setPlayerVipGroup(targetPlayer);
+                    sender.sendMessage(ChatColor.GREEN + "已为玩家 " + playerName + " 设置VIP权限组！");
+                    targetPlayer.sendMessage(ChatColor.GREEN + "VIP权益购买已处理！");
+                }
+            } else {
+                // 尝试离线设置
+                sender.sendMessage(ChatColor.YELLOW + "玩家不在线，正在处理离线设置...");
+                // 对于离线玩家，我们可以记录到数据库或其他地方，待玩家上线时处理
+                if (args.length >= 3 && args[2].equalsIgnoreCase("mvp")) {
+                    handleOfflineMvpPurchase(playerName);
+                    sender.sendMessage(ChatColor.GREEN + "已记录 " + playerName + " 的MVP购买，下次上线时激活！");
+                } else {
+                    handleOfflineVipPurchase(playerName);
+                    sender.sendMessage(ChatColor.GREEN + "已记录 " + playerName + " 的VIP购买，下次上线时激活！");
+                }
+            }
+            
+            return true;
+        } else if (command.getName().equalsIgnoreCase("vippay")) {
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(ChatColor.RED + "此命令只能由玩家执行！");
+                return true;
+            }
+            
+            Player player = (Player) sender;
+            
+            if (args.length == 1 && args[0].equalsIgnoreCase("confirm")) {
+                if (!player.hasPermission("nekospawn.vip.pay")) {
+                    player.sendMessage(ChatColor.RED + "你没有权限使用此命令！");
+                    return true;
+                }
+                
+                // 处理支付成功的VIP购买
+                handlePaidVipPurchase(player);
+                return true;
+            } else if (args.length == 2 && args[0].equalsIgnoreCase("confirm") && args[1].equalsIgnoreCase("mvp")) {
+                if (!player.hasPermission("nekospawn.vip.pay")) {
+                    player.sendMessage(ChatColor.RED + "你没有权限使用此命令！");
+                    return true;
+                }
+                
+                // 处理支付成功的MVP购买
+                handlePaidMvpPurchase(player);
+                return true;
+            } else {
+                player.sendMessage(ChatColor.RED + "用法: /vippay confirm 或 /vippay confirm mvp");
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) throws SQLException {
         Player player = event.getPlayer();
         FileConfiguration config = getConfig();

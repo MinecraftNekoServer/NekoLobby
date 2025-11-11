@@ -91,25 +91,34 @@ public class QRCodeMapRenderer extends MapRenderer {
                             meta.setDisplayName(ChatColor.GOLD + "支付二维码地图");
                             mapItem.setItemMeta(meta);
 
-                            // 放入玩家物品栏第三槽位（索引为2）
-                            player.getInventory().setItem(2, mapItem);
-                            player.sendMessage(ChatColor.GREEN + "支付二维码地图已放入您的物品栏第三格！");
-                            player.sendMessage(ChatColor.YELLOW + "请扫描地图上的二维码完成支付。");
-                            player.sendMessage(ChatColor.GOLD + "支付完成后，VIP权限将自动激活。");
-
-                            // 记录活跃二维码
+                            // 放入玩家物品栏第三槽位（索引为2）
+
+                            player.getInventory().setItem(2, mapItem);
+
+                            player.sendMessage(ChatColor.GREEN + "支付二维码地图已放入您的物品栏第三格！");
+
+                            player.sendMessage(ChatColor.YELLOW + "请扫描地图上的二维码完成支付。");
+
+                            player.sendMessage(ChatColor.GOLD + "支付完成后，购买的权限将自动激活。");
+
+
+
+                            // 记录活跃二维码
+
                             activeMaps.put(player, cleanUrl);
                         } catch (Exception e) {
                             player.sendMessage(ChatColor.RED + "创建二维码地图时出现错误: " + e.getMessage());
                             e.printStackTrace();
+                            // 如果创建地图失败，发送链接消息
+                            player.sendMessage(ChatColor.GREEN + "支付二维码已生成！");
+                            player.sendMessage(ChatColor.YELLOW + "请访问以下链接扫描二维码完成支付：");
+                            player.sendMessage(ChatColor.AQUA + cleanUrl);
+                            player.sendMessage(ChatColor.GOLD + "支付完成后，购买的权限将自动激活。");
+
                             
-                            // 如果创建地图失败，发送链接消息
-                            player.sendMessage(ChatColor.GREEN + "支付二维码已生成！");
-                            player.sendMessage(ChatColor.YELLOW + "请访问以下链接扫描二维码完成支付：");
-                            player.sendMessage(ChatColor.AQUA + cleanUrl);
-                            player.sendMessage(ChatColor.GOLD + "支付完成后，VIP权限将自动激活。");
-                            
-                            // 记录活跃二维码
+
+                            // 记录活跃二维码
+
                             activeMaps.put(player, cleanUrl);
                         }
                     });
@@ -119,13 +128,20 @@ public class QRCodeMapRenderer extends MapRenderer {
                         player.sendMessage(ChatColor.RED + "加载支付二维码时出现错误: " + e.getMessage());
                         e.printStackTrace();
                         
-                        // 发送链接消息作为备选方案
-                        player.sendMessage(ChatColor.GREEN + "支付二维码已生成！");
-                        player.sendMessage(ChatColor.YELLOW + "请访问以下链接扫描二维码完成支付：");
-                        player.sendMessage(ChatColor.AQUA + cleanUrl);
-                        player.sendMessage(ChatColor.GOLD + "支付完成后，VIP权限将自动激活。");
-                        
-                        // 记录活跃二维码
+                        // 发送链接消息作为备选方案
+
+                        player.sendMessage(ChatColor.GREEN + "支付二维码已生成！");
+
+                        player.sendMessage(ChatColor.YELLOW + "请访问以下链接扫描二维码完成支付：");
+
+                        player.sendMessage(ChatColor.AQUA + cleanUrl);
+
+                        player.sendMessage(ChatColor.GOLD + "支付完成后，购买的权限将自动激活。");
+
+                        
+
+                        // 记录活跃二维码
+
                         activeMaps.put(player, cleanUrl);
                     });
                 }
