@@ -180,8 +180,8 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
         if (qrCodeUrl != null && !qrCodeUrl.isEmpty()) {
             // 成功获取二维码URL，显示在地图上
-            player.sendMessage(ChatColor.GREEN + "VIP订单创建成功啦。杂鱼！");
-            player.sendMessage(ChatColor.YELLOW + "正在生成支付二维码。杂鱼！");
+            player.sendMessage(ChatColor.GREEN + "VIP订单创建成功啦，杂鱼~ 杂鱼的VIP权益即将生效！");
+            player.sendMessage(ChatColor.YELLOW + "正在给杂鱼生成支付二维码呢~");
             player.closeInventory(); // 关闭GUI
 
             // 在单独的线程中处理二维码地图渲染，避免阻塞主线程
@@ -190,7 +190,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             });
         } else {
 
-            player.sendMessage(ChatColor.RED + "真是杂鱼呢。订单创建失败咯");
+            player.sendMessage(ChatColor.RED + "真是杂鱼呢，订单创建失败咯~ 杂鱼要再试试吗？");
         }
     }
 
@@ -221,8 +221,8 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
         if (qrCodeUrl != null && !qrCodeUrl.isEmpty()) {
             // 成功获取二维码URL，显示在地图上
-            player.sendMessage(ChatColor.GREEN + "VIP订单创建成功啦，杂鱼！");
-            player.sendMessage(ChatColor.YELLOW + "正在生成支付二维码。杂鱼！");
+            player.sendMessage(ChatColor.GREEN + "VIP订单创建成功啦，杂鱼~ 杂鱼的VIP权益即将生效！");
+            player.sendMessage(ChatColor.YELLOW + "正在给杂鱼生成支付二维码呢~");
             player.closeInventory(); // 关闭GUI
 
             // 在单独的线程中处理二维码地图渲染，避免阻塞主线程
@@ -230,7 +230,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
                 QRCodeMapRenderer.showQRCodeOnMap(player, qrCodeUrl);
             });
         } else {
-            player.sendMessage(ChatColor.RED + "真是杂鱼呢。订单创建失败咯");
+            player.sendMessage(ChatColor.RED + "真是杂鱼呢，订单创建失败咯~ 杂鱼要再试试吗？");
             // 添加更多详细错误信息
             String errorDetails = zPayUtil.getLastError();
             if (errorDetails != null && !errorDetails.isEmpty()) {
@@ -547,7 +547,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
                                                     onlinePlayer.sendMessage(ChatColor.AQUA + "📢 服务器公告");
 
-                                                    onlinePlayer.sendMessage(ChatColor.YELLOW + playerName + " 杂鱼购买了MVP权益！");
+                                                    onlinePlayer.sendMessage(ChatColor.YELLOW + playerName + " 这个杂鱼购买了MVP权益！真是有钱呢~");
 
                                                     onlinePlayer.sendMessage(ChatColor.GREEN + "感谢支持，祝游戏愉快！");
 
@@ -601,7 +601,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
                                                     onlinePlayer.sendMessage(ChatColor.AQUA + "📢 服务器公告");
 
-                                                    onlinePlayer.sendMessage(ChatColor.YELLOW + playerName + " 杂鱼购买了VIP权益！");
+                                                    onlinePlayer.sendMessage(ChatColor.YELLOW + playerName + " 这个杂鱼购买了VIP权益！真是有钱呢~");
 
                                                     onlinePlayer.sendMessage(ChatColor.GREEN + "感谢支持，祝游戏愉快！");
 
@@ -2340,7 +2340,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
                 Location spawnLocation = new Location(getServer().getWorld(worldName), spawnX, spawnY, spawnZ, yaw, pitch);
                 player.teleport(spawnLocation);
-                player.sendMessage(ChatColor.RED + "杂鱼你要干什么！不允许出去！");
+                player.sendMessage(ChatColor.RED + "哼！杂鱼想偷偷溜出去？这里才是你该待的地方！");
             }
             return;
         }
@@ -2372,7 +2372,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
                     double lastZ = lastLoc.getZ();
                     if (lastX >= minX && lastX <= maxX && lastZ >= minZ && lastZ <= maxZ) {
                         player.teleport(lastLoc);
-                        player.sendMessage(ChatColor.RED + "杂鱼你要干什么！不允许出去！");
+                        player.sendMessage(ChatColor.RED + "哼！杂鱼想偷偷溜出去？这里才是你该待的地方！");
                     } else {
                         // 如果上一个位置也不在范围内，则拉回出生点
                         if (config.contains("spawn.world")) {
@@ -2385,7 +2385,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
                             Location spawnLocation = new Location(getServer().getWorld(worldName), spawnX, spawnY, spawnZ, yaw, pitch);
                             player.teleport(spawnLocation);
-                            player.sendMessage(ChatColor.RED + "杂鱼你要干什么！不允许出去！");
+                            player.sendMessage(ChatColor.RED + "哼！杂鱼想偷偷溜出去？这里才是你该待的地方！");
                         }
                     }
                 } else {
@@ -2400,7 +2400,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
                         Location spawnLocation = new Location(getServer().getWorld(worldName), spawnX, spawnY, spawnZ, yaw, pitch);
                         player.teleport(spawnLocation);
-                        player.sendMessage(ChatColor.RED + "杂鱼你要干什么！不允许出去！");
+                        player.sendMessage(ChatColor.RED + "哼！杂鱼想偷偷溜出去？这里才是你该待的地方！");
                     }
                 }
             } else {
@@ -2827,7 +2827,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
     private void handlePaidVipPurchase(Player player) {
         // 直接设置VIP权限组，不扣除猫粮
         setPlayerVipGroup(player);
-        player.sendMessage(ChatColor.GREEN + "支付成功啦！杂鱼的VIP激活成功啦。有效期一个月！");
+        player.sendMessage(ChatColor.GREEN + "支付成功啦！杂鱼的VIP权益激活成功啦，有效期一个月！杂鱼真棒~");
     }
 
     /**
@@ -2837,7 +2837,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
     private void handlePaidMvpPurchase(Player player) {
         // 直接设置MVP权限组，不扣除猫粮
         setPlayerMvpGroup(player);
-        player.sendMessage(ChatColor.GREEN + "支付成功啦！杂鱼的MVP激活成功啦。有效期一个月！");
+        player.sendMessage(ChatColor.GREEN + "支付成功啦！杂鱼的MVP权益激活成功啦，有效期一个月！杂鱼真棒~");
     }
 
     /**
@@ -2889,7 +2889,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             if (rs.next()) {
                 // 有待处理的VIP购买
                 setPlayerVipGroup(player);
-                player.sendMessage(ChatColor.GREEN + "杂鱼！你还知道回来呢。你买完VIP怎么跑了");
+                player.sendMessage(ChatColor.RED + "哼！杂鱼终于回来了，买完VIP就跑可不行哦~ 权益已经给你激活了呢！");
 
                 // 删除记录
                 PreparedStatement deleteStmt = conn.prepareStatement("DELETE FROM pending_vip_purchases WHERE player_name = ?");
@@ -2928,9 +2928,9 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             rs = stmt.executeQuery();
 
             if (rs.next()) {
-                // 有待处理的MVP购买
+                                // 有待处理的MVP购买
                 setPlayerMvpGroup(player);
-                player.sendMessage(ChatColor.GREEN + "杂鱼！你还知道回来呢。你买完MVP怎么跑了");
+                player.sendMessage(ChatColor.GREEN + "哼！杂鱼终于回来了，买完MVP就跑可不行哦~ 权益已经给你激活了呢！");
 
                 // 删除记录
                 PreparedStatement deleteStmt = conn.prepareStatement("DELETE FROM pending_vip_purchases WHERE player_name = ?");
@@ -3171,7 +3171,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         if (e.getSlot() == 20) { // VIP权益选项
             // 检查玩家是否有足够的猫粮
             if (catFood < 300) {
-                player.sendMessage(ChatColor.RED + "杂鱼杂鱼！你的猫粮都不够呢！");
+                player.sendMessage(ChatColor.RED + "杂鱼杂鱼！你的猫粮都不够呢，快去赚点猫粮再来吧~");
                 return;
             }
 
@@ -3179,7 +3179,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             deductCatFood(player, 300);
             // 设置玩家VIP权限组
             setPlayerVipGroup(player);
-            player.sendMessage(ChatColor.GREEN + "真是大杂鱼呢，你的VIP购买成功了喔！");
+            player.sendMessage(ChatColor.GREEN + "真是大杂鱼呢，你的VIP购买成功了喔~ 权益已经激活，杂鱼真棒！");
             // 重新打开GUI以刷新信息
             openRechargeGUI(player);
             return;
@@ -3195,7 +3195,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
         // 微信支付VIP购买（槽位24）
         if (e.getSlot() == 24) { // 微信VIP权益选项（现金支付）
-            player.sendMessage(ChatColor.YELLOW + "正在给你创建支付二维码呢杂鱼");
+            player.sendMessage(ChatColor.YELLOW + "正在给杂鱼创建支付二维码呢，稍等一下哦~");
             // 创建Z-Pay微信支付订单
             createZPayOrder(player, "wxpay");
             return;
@@ -3205,7 +3205,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         if (e.getSlot() == 29) { // MVP权益选项
             // 检查玩家是否有足够的猫粮
             if (catFood < 600) {
-                player.sendMessage(ChatColor.RED + "真是杂鱼，你的猫粮都不够就想买吗？");
+                player.sendMessage(ChatColor.RED + "真是杂鱼，你的猫粮都不够就想买吗？快去赚点猫粮再来吧~");
                 return;
             }
 
@@ -3213,7 +3213,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             deductCatFood(player, 600);
             // 设置玩家MVP权限组
             setPlayerMvpGroup(player);
-            player.sendMessage(ChatColor.GREEN + "杂鱼！MVP购买成功啦！");
+            player.sendMessage(ChatColor.GREEN + "杂鱼！MVP购买成功啦，权益已经激活，杂鱼真棒！");
             // 重新打开GUI以刷新信息
             openRechargeGUI(player);
             return;
@@ -3221,7 +3221,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
         // 支付宝支付MVP购买（槽位31）
         if (e.getSlot() == 31) { // 支付宝MVP权益选项（现金支付）
-            player.sendMessage(ChatColor.YELLOW + "正在给你创建支付二维码呢杂鱼");
+            player.sendMessage(ChatColor.YELLOW + "正在给杂鱼创建支付二维码呢，稍等一下哦~");
 
             // 创建Z-Pay支付宝支付订单
             String orderNo = zPayUtil.generateOrderNo();
@@ -3245,7 +3245,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
                     QRCodeMapRenderer.showQRCodeOnMap(player, qrCodeUrl);
                 });
             } else {
-                player.sendMessage(ChatColor.RED + "真是杂鱼呢，订单创建失败了呢");
+                player.sendMessage(ChatColor.RED + "真是杂鱼呢，订单创建失败了呢，要不要再试试？");
 
                 // 添加更多详细错误信息
                 String errorDetails = zPayUtil.getLastError();
@@ -3272,14 +3272,14 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             if (qrCodeUrl != null && !qrCodeUrl.isEmpty()) {
                 // 成功获取二维码URL，显示在地图上
                 player.sendMessage(ChatColor.GREEN + "MVP支付订单创建成功！");
-                player.sendMessage(ChatColor.YELLOW + "正在给你创建支付二维码呢杂鱼");
+                player.sendMessage(ChatColor.YELLOW + "正在给杂鱼创建支付二维码呢，稍等一下哦~");
                 player.closeInventory(); // 关闭GUI
                 // 在单独的线程中处理二维码地图渲染，避免阻塞主线程
                 Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
                     QRCodeMapRenderer.showQRCodeOnMap(player, qrCodeUrl);
                 });
             } else {
-                player.sendMessage(ChatColor.RED + "创建支付订单失败了喔杂鱼~");
+                player.sendMessage(ChatColor.RED + "创建支付订单失败了喔杂鱼~ 不要灰心，再试试吧！");
                 // 添加更多详细错误信息
                 String errorDetails = zPayUtil.getLastError();
                 if (errorDetails != null && !errorDetails.isEmpty()) {
