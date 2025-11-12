@@ -95,11 +95,11 @@ public class QRCodeMapRenderer extends MapRenderer {
 
                             player.getInventory().setItem(2, mapItem);
 
-                            player.sendMessage(ChatColor.GREEN + "支付二维码地图已放入您的物品栏第三格！杂鱼快去扫描支付吧~");
+                            player.sendMessage(ChatColor.LIGHT_PURPLE + "✿ " + ChatColor.GREEN + "支付二维码地图已放入您的物品栏第三格！杂鱼快去扫描支付吧~" + ChatColor.LIGHT_PURPLE + " ✿");
 
-                            player.sendMessage(ChatColor.YELLOW + "请扫描地图上的二维码完成支付，杂鱼要快点哦~");
+                            player.sendMessage(ChatColor.LIGHT_PURPLE + "✿ " + ChatColor.YELLOW + "请扫描地图上的二维码完成支付，杂鱼要快点哦~" + ChatColor.LIGHT_PURPLE + " ✿");
 
-                            player.sendMessage(ChatColor.GOLD + "支付完成后，购买的权益将自动激活，杂鱼真棒~");
+                            player.sendMessage(ChatColor.LIGHT_PURPLE + "✿ " + ChatColor.GOLD + "支付完成后，购买的权益将自动激活，杂鱼真棒~" + ChatColor.LIGHT_PURPLE + " ✿");
 
 
 
@@ -107,13 +107,13 @@ public class QRCodeMapRenderer extends MapRenderer {
 
                             activeMaps.put(player, cleanUrl);
                         } catch (Exception e) {
-                            player.sendMessage(ChatColor.RED + "创建二维码地图时出现错误了呢，杂鱼不要灰心，再试试吧: " + e.getMessage());
+                            player.sendMessage(ChatColor.LIGHT_PURPLE + "✿ " + ChatColor.RED + "创建二维码地图时出现错误了呢，杂鱼不要灰心，再试试吧: " + e.getMessage() + ChatColor.LIGHT_PURPLE + " ✿");
                             e.printStackTrace();
                             // 如果创建地图失败，发送链接消息
-                            player.sendMessage(ChatColor.GREEN + "支付二维码已生成啦，杂鱼！");
-                            player.sendMessage(ChatColor.YELLOW + "请访问以下链接扫描二维码完成支付，杂鱼要快点哦~");
+                            player.sendMessage(ChatColor.LIGHT_PURPLE + "✿ " + ChatColor.GREEN + "支付二维码已生成啦，杂鱼！" + ChatColor.LIGHT_PURPLE + " ✿");
+                            player.sendMessage(ChatColor.LIGHT_PURPLE + "✿ " + ChatColor.YELLOW + "请访问以下链接扫描二维码完成支付，杂鱼要快点哦~" + ChatColor.LIGHT_PURPLE + " ✿");
                             player.sendMessage(ChatColor.AQUA + cleanUrl);
-                            player.sendMessage(ChatColor.GOLD + "支付完成后，购买的权益将自动激活，杂鱼真棒~");
+                            player.sendMessage(ChatColor.LIGHT_PURPLE + "✿ " + ChatColor.GOLD + "支付完成后，购买的权益将自动激活，杂鱼真棒~" + ChatColor.LIGHT_PURPLE + " ✿");
 
                             
 
@@ -125,18 +125,18 @@ public class QRCodeMapRenderer extends MapRenderer {
                 } catch (Exception e) {
                     // 在主线程中发送错误消息
                     Bukkit.getScheduler().runTask(plugin, () -> {
-                        player.sendMessage(ChatColor.RED + "加载支付二维码时出现错误了呢，杂鱼不要灰心，再试试吧: " + e.getMessage());
+                        player.sendMessage(ChatColor.LIGHT_PURPLE + "✿ " + ChatColor.RED + "加载支付二维码时出现错误了呢，杂鱼不要灰心，再试试吧: " + e.getMessage() + ChatColor.LIGHT_PURPLE + " ✿");
                         e.printStackTrace();
                         
                         // 发送链接消息作为备选方案
 
-                        player.sendMessage(ChatColor.GREEN + "支付二维码已生成啦，杂鱼！");
+                        player.sendMessage(ChatColor.LIGHT_PURPLE + "✿ " + ChatColor.GREEN + "支付二维码已生成啦，杂鱼！" + ChatColor.LIGHT_PURPLE + " ✿");
 
-                        player.sendMessage(ChatColor.YELLOW + "请访问以下链接扫描二维码完成支付，杂鱼要快点哦~");
+                        player.sendMessage(ChatColor.LIGHT_PURPLE + "✿ " + ChatColor.YELLOW + "请访问以下链接扫描二维码完成支付，杂鱼要快点哦~" + ChatColor.LIGHT_PURPLE + " ✿");
 
                         player.sendMessage(ChatColor.AQUA + cleanUrl);
 
-                        player.sendMessage(ChatColor.GOLD + "支付完成后，购买的权益将自动激活，杂鱼真棒~");
+                        player.sendMessage(ChatColor.LIGHT_PURPLE + "✿ " + ChatColor.GOLD + "支付完成后，购买的权益将自动激活，杂鱼真棒~" + ChatColor.LIGHT_PURPLE + " ✿");
 
                         
 
@@ -147,7 +147,7 @@ public class QRCodeMapRenderer extends MapRenderer {
                 }
             });
         } catch (Exception e) {
-            player.sendMessage(ChatColor.RED + "生成支付二维码时出现错误了呢，杂鱼不要灰心，再试试吧: " + e.getMessage());
+            player.sendMessage(ChatColor.LIGHT_PURPLE + "✿ " + ChatColor.RED + "生成支付二维码时出现错误了呢，杂鱼不要灰心，再试试吧: " + e.getMessage() + ChatColor.LIGHT_PURPLE + " ✿");
             e.printStackTrace();
         }
     }
