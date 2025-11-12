@@ -180,8 +180,8 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
         if (qrCodeUrl != null && !qrCodeUrl.isEmpty()) {
             // 成功获取二维码URL，显示在地图上
-            player.sendMessage(ChatColor.GREEN + "VIP支付订单创建成功！");
-            player.sendMessage(ChatColor.YELLOW + "正在生成支付二维码地图...");
+            player.sendMessage(ChatColor.GREEN + "VIP订单创建成功啦。杂鱼！");
+            player.sendMessage(ChatColor.YELLOW + "正在生成支付二维码。杂鱼！");
             player.closeInventory(); // 关闭GUI
 
             // 在单独的线程中处理二维码地图渲染，避免阻塞主线程
@@ -190,7 +190,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             });
         } else {
 
-            player.sendMessage(ChatColor.RED + "创建支付订单失败：无法获取支付二维码");
+            player.sendMessage(ChatColor.RED + "真是杂鱼呢。订单创建失败咯");
         }
     }
 
@@ -221,8 +221,8 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
         if (qrCodeUrl != null && !qrCodeUrl.isEmpty()) {
             // 成功获取二维码URL，显示在地图上
-            player.sendMessage(ChatColor.GREEN + "VIP支付订单创建成功！");
-            player.sendMessage(ChatColor.YELLOW + "正在生成支付二维码地图...");
+            player.sendMessage(ChatColor.GREEN + "VIP订单创建成功啦，杂鱼！");
+            player.sendMessage(ChatColor.YELLOW + "正在生成支付二维码。杂鱼！");
             player.closeInventory(); // 关闭GUI
 
             // 在单独的线程中处理二维码地图渲染，避免阻塞主线程
@@ -230,7 +230,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
                 QRCodeMapRenderer.showQRCodeOnMap(player, qrCodeUrl);
             });
         } else {
-            player.sendMessage(ChatColor.RED + "创建支付订单失败：无法获取支付二维码");
+            player.sendMessage(ChatColor.RED + "真是杂鱼呢。订单创建失败咯");
             // 添加更多详细错误信息
             String errorDetails = zPayUtil.getLastError();
             if (errorDetails != null && !errorDetails.isEmpty()) {
@@ -547,7 +547,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
                                                     onlinePlayer.sendMessage(ChatColor.AQUA + "📢 服务器公告");
 
-                                                    onlinePlayer.sendMessage(ChatColor.YELLOW + playerName + " 购买了MVP权益！");
+                                                    onlinePlayer.sendMessage(ChatColor.YELLOW + playerName + " 杂鱼购买了MVP权益！");
 
                                                     onlinePlayer.sendMessage(ChatColor.GREEN + "感谢支持，祝游戏愉快！");
 
@@ -601,7 +601,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
                                                     onlinePlayer.sendMessage(ChatColor.AQUA + "📢 服务器公告");
 
-                                                    onlinePlayer.sendMessage(ChatColor.YELLOW + playerName + " 购买了VIP权益！");
+                                                    onlinePlayer.sendMessage(ChatColor.YELLOW + playerName + " 杂鱼购买了VIP权益！");
 
                                                     onlinePlayer.sendMessage(ChatColor.GREEN + "感谢支持，祝游戏愉快！");
 
@@ -833,7 +833,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
                     // 查找suffix.0 (优先级为0的后缀)
                     String suffix = suffixes.get(0);
                     if (suffix != null && !suffix.isEmpty()) {
-                        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby] 玩家 " + player.getName() + " 的称号(suffix.0): " + suffix);
+                        // getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby] 玩家 " + player.getName() + " 的称号(suffix.0): " + suffix);
 
                         // 如果PlaceholderAPI可用，则解析后缀中的占位符并转换颜色代码
                         if (placeholderAPIEnabled) {
@@ -1298,88 +1298,67 @@ public final class NekoLobby extends JavaPlugin implements Listener {
                 player.sendMessage(ChatColor.RED + "无效的点名称。请使用 point1 或 point2");
                 return true;
             }
-        } else if (command.getName().equalsIgnoreCase("zpay")) {
-            // 检查权限
-            if (!sender.hasPermission("nekospawn.zpay.admin")) {
-                sender.sendMessage(ChatColor.RED + "你没有权限使用此命令！");
-                return true;
-            }
-            
-            if (args.length < 2 || !args[0].equalsIgnoreCase("complete")) {
-                if (args.length == 1 && args[0].equalsIgnoreCase("confirm") && sender instanceof Player) {
-                    // 管理员确认自己的支付
-                    Player player = (Player) sender;
-                    handlePaidVipPurchase(player);
-                    return true;
-                }
-                sender.sendMessage(ChatColor.RED + "用法: /zpay complete <playerName> 或 /zpay confirm");
-                return true;
-            }
-            
-            String playerName = args[1];
-            Player targetPlayer = Bukkit.getPlayer(playerName);
-            
-            if (targetPlayer != null) {
-                if (args.length >= 3 && args[2].equalsIgnoreCase("mvp")) {
-                    // 给玩家设置MVP权限组
-                    setPlayerMvpGroup(targetPlayer);
-                    sender.sendMessage(ChatColor.GREEN + "已为玩家 " + playerName + " 设置MVP权限组！");
-                    targetPlayer.sendMessage(ChatColor.GREEN + "MVP权益购买已处理！");
-                } else {
-                    // 给玩家设置VIP权限组
-                    setPlayerVipGroup(targetPlayer);
-                    sender.sendMessage(ChatColor.GREEN + "已为玩家 " + playerName + " 设置VIP权限组！");
-                    targetPlayer.sendMessage(ChatColor.GREEN + "VIP权益购买已处理！");
-                }
-            } else {
-                // 尝试离线设置
-                sender.sendMessage(ChatColor.YELLOW + "玩家不在线，正在处理离线设置...");
-                // 对于离线玩家，我们可以记录到数据库或其他地方，待玩家上线时处理
-                if (args.length >= 3 && args[2].equalsIgnoreCase("mvp")) {
-                    handleOfflineMvpPurchase(playerName);
-                    sender.sendMessage(ChatColor.GREEN + "已记录 " + playerName + " 的MVP购买，下次上线时激活！");
-                } else {
-                    handleOfflineVipPurchase(playerName);
-                    sender.sendMessage(ChatColor.GREEN + "已记录 " + playerName + " 的VIP购买，下次上线时激活！");
-                }
-            }
-            
-            return true;
-        } else if (command.getName().equalsIgnoreCase("vippay")) {
-            if (!(sender instanceof Player)) {
-                sender.sendMessage(ChatColor.RED + "此命令只能由玩家执行！");
-                return true;
-            }
-            
-            Player player = (Player) sender;
-            
-            if (args.length == 1 && args[0].equalsIgnoreCase("confirm")) {
-                if (!player.hasPermission("nekospawn.vip.pay")) {
-                    player.sendMessage(ChatColor.RED + "你没有权限使用此命令！");
-                    return true;
-                }
-                
-                // 处理支付成功的VIP购买
-                handlePaidVipPurchase(player);
-                return true;
-            } else if (args.length == 2 && args[0].equalsIgnoreCase("confirm") && args[1].equalsIgnoreCase("mvp")) {
-                if (!player.hasPermission("nekospawn.vip.pay")) {
-                    player.sendMessage(ChatColor.RED + "你没有权限使用此命令！");
-                    return true;
-                }
-                
-                // 处理支付成功的MVP购买
-                handlePaidMvpPurchase(player);
-                return true;
-            } else {
-                player.sendMessage(ChatColor.RED + "用法: /vippay confirm 或 /vippay confirm mvp");
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @EventHandler
+        }
+
+
+            String playerName = args[1];
+
+            Player targetPlayer = Bukkit.getPlayer(playerName);
+
+
+            if (targetPlayer != null) {
+
+                if (args.length >= 3 && args[2].equalsIgnoreCase("mvp")) {
+
+                    // 给玩家设置MVP权限组
+
+                    setPlayerMvpGroup(targetPlayer);
+
+                    sender.sendMessage(ChatColor.GREEN + "已为玩家 " + playerName + " 设置MVP权限组！");
+
+                    targetPlayer.sendMessage(ChatColor.GREEN + "MVP权益购买已处理！");
+
+                } else {
+
+                    // 给玩家设置VIP权限组
+
+                    setPlayerVipGroup(targetPlayer);
+
+                    sender.sendMessage(ChatColor.GREEN + "已为玩家 " + playerName + " 设置VIP权限组！");
+
+                    targetPlayer.sendMessage(ChatColor.GREEN + "VIP权益购买已处理！");
+
+                }
+
+            } else {
+
+                // 尝试离线设置
+
+                sender.sendMessage(ChatColor.YELLOW + "玩家不在线，正在处理离线设置...");
+
+                // 对于离线玩家，我们可以记录到数据库或其他地方，待玩家上线时处理
+
+                if (args.length >= 3 && args[2].equalsIgnoreCase("mvp")) {
+
+                    handleOfflineMvpPurchase(playerName);
+
+                    sender.sendMessage(ChatColor.GREEN + "已记录 " + playerName + " 的MVP购买，下次上线时激活！");
+
+                } else {
+
+                    handleOfflineVipPurchase(playerName);
+
+                    sender.sendMessage(ChatColor.GREEN + "已记录 " + playerName + " 的VIP购买，下次上线时激活！");
+
+                }
+
+            }
+        return false;
+    }
+
+
+    @EventHandler
+
     public void onPlayerJoin(PlayerJoinEvent event) throws SQLException {
         Player player = event.getPlayer();
         FileConfiguration config = getConfig();
@@ -1513,7 +1492,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         ItemStack item = e.getItemInHand(); // ✅ 修复未定义的 item
         if (!player.hasPermission("nekospawn.build")) {
             e.setCancelled(true);
-            player.sendMessage(ChatColor.RED + "你没有权限放置方块!");
+            // player.sendMessage(ChatColor.RED + "你没有权限放置方块!");
             return;
         }
         // 防止放置特殊物品
@@ -1923,8 +1902,8 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         String cleanTitle = ChatColor.stripColor(inventoryTitle);
 
         // 调试信息
-        getLogger().info("玩家 " + player.getName() + " 点击了GUI: " + cleanTitle + " (原始: " + inventoryTitle + ")");
-        getLogger().info("点击槽位: " + e.getSlot() + ", 物品: " + clickedItem.getType());
+        // getLogger().info("玩家 " + player.getName() + " 点击了GUI: " + cleanTitle + " (原始: " + inventoryTitle + ")");
+        // getLogger().info("点击槽位: " + e.getSlot() + ", 物品: " + clickedItem.getType());
 
         // 处理不同的GUI
         if (cleanTitle.contains("个人档案")) {
@@ -2161,7 +2140,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         }
 
         // 如果没有匹配任何项目，输出调试信息
-        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] Player " + player.getName() + " clicked unknown item: " + clickedItem.getType().name());
+        // getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] Player " + player.getName() + " clicked unknown item: " + clickedItem.getType().name());
 
     }
 
@@ -2178,7 +2157,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
         Player player = (Player) e.getWhoClicked();
 
-        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 处理玩家 " + player.getName() + " 的权益购买GUI交互");
+        // getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 处理玩家 " + player.getName() + " 的权益购买GUI交互");
 
 
         ItemStack clickedItem = e.getCurrentItem();
@@ -2186,7 +2165,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
         // 添加点击位置调试信息
 
-        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 玩家 " + player.getName() + " 点击了槽位 " + e.getSlot());
+        // getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 玩家 " + player.getName() + " 点击了槽位 " + e.getSlot());
 
 
         // 获取玩家名称
@@ -2270,80 +2249,26 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             return;
         }
 
-
         // 如果点击的是玩家信息头颅，刷新GUI（槽位49）
-
         if (e.getSlot() == 49) {
-
             Material playerHeadMat = Material.matchMaterial("SKULL_ITEM");
-
             if ((playerHeadMat != null && clickedItem.getType() == playerHeadMat) || clickedItem.getType() == Material.matchMaterial("SKULL_ITEM")) {
-
-                getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 玩家 " + player.getName() + " 点击了玩家头颅项目");
-
+                // getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 玩家 " + player.getName() + " 点击了玩家头颅项目");
                 // 重新打开GUI以刷新信息
-
                 openRechargeGUI(player);
-
                 return;
-
             }
 
         }
-
-
-        // 检查是否点击了现金支付VIP选项（槽位22）
-        if (e.getSlot() == 22) { // 现金支付VIP选项
-            // 创建Z-Pay支付订单
-            createZPayOrder(player);
-            return;
-        }
-
-        // 检查是否点击了支付确认按钮（槽位24）
-        if (e.getSlot() == 24) { // 支付确认按钮
-            // 处理支付成功的VIP购买
-            handlePaidVipPurchase(player);
-            // 重新打开GUI以刷新信息
-            openRechargeGUI(player);
-            return;
-        }
-
 
         // 现金支付VIP购买（槽位22）
 
 
         if (e.getSlot() == 22) { // VIP权益选项（现金支付） {
-
             player.sendMessage(ChatColor.YELLOW + "正在为您生成Z-Pay支付二维码...");
-
-
             // 创建Z-Pay支付订单
-
-
             createZPayOrder(player);
-
-
             return;
-
-
-        }
-
-
-        // 确认支付完成（槽位24）
-
-
-        if (e.getSlot() == 24) { // 确认支付完成按钮 {
-
-
-            player.sendMessage(ChatColor.YELLOW + "请使用 /vippay confirm 命令确认支付完成并激活VIP权限。");
-
-
-            player.sendMessage(ChatColor.GREEN + "提示: 在聊天框中输入 " + ChatColor.AQUA + "/vippay confirm" + ChatColor.GREEN + " 来激活VIP权限。");
-
-
-            return;
-
-
         }
 
 
@@ -2355,7 +2280,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
             if ((playerHeadMat != null && clickedItem.getType() == playerHeadMat) || clickedItem.getType() == Material.matchMaterial("SKULL_ITEM")) {
 
-                getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 玩家 " + player.getName() + " 点击了玩家头颅项目");
+                // getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 玩家 " + player.getName() + " 点击了玩家头颅项目");
 
                 // 重新打开GUI以刷新信息
 
@@ -2370,7 +2295,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
         // 如果没有匹配任何项目，输出调试信息
 
-        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 玩家 " + player.getName() + " 点击了未知项目: " + clickedItem.getType().name() + " (槽位: " + e.getSlot() + ")");
+        // getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 玩家 " + player.getName() + " 点击了未知项目: " + clickedItem.getType().name() + " (槽位: " + e.getSlot() + ")");
 
     }
 
@@ -2415,7 +2340,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
                 Location spawnLocation = new Location(getServer().getWorld(worldName), spawnX, spawnY, spawnZ, yaw, pitch);
                 player.teleport(spawnLocation);
-                player.sendMessage(ChatColor.RED + "你不允许在这个范围之外");
+                player.sendMessage(ChatColor.RED + "杂鱼你要干什么！不允许出去！");
             }
             return;
         }
@@ -2447,7 +2372,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
                     double lastZ = lastLoc.getZ();
                     if (lastX >= minX && lastX <= maxX && lastZ >= minZ && lastZ <= maxZ) {
                         player.teleport(lastLoc);
-                        player.sendMessage(ChatColor.RED + "你不允许在这个范围之外");
+                        player.sendMessage(ChatColor.RED + "杂鱼你要干什么！不允许出去！");
                     } else {
                         // 如果上一个位置也不在范围内，则拉回出生点
                         if (config.contains("spawn.world")) {
@@ -2460,7 +2385,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
                             Location spawnLocation = new Location(getServer().getWorld(worldName), spawnX, spawnY, spawnZ, yaw, pitch);
                             player.teleport(spawnLocation);
-                            player.sendMessage(ChatColor.RED + "你不允许在这个范围之外");
+                            player.sendMessage(ChatColor.RED + "杂鱼你要干什么！不允许出去！");
                         }
                     }
                 } else {
@@ -2475,7 +2400,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
 
                         Location spawnLocation = new Location(getServer().getWorld(worldName), spawnX, spawnY, spawnZ, yaw, pitch);
                         player.teleport(spawnLocation);
-                        player.sendMessage(ChatColor.RED + "你不允许在这个范围之外");
+                        player.sendMessage(ChatColor.RED + "杂鱼你要干什么！不允许出去！");
                     }
                 }
             } else {
@@ -2900,84 +2825,50 @@ public final class NekoLobby extends JavaPlugin implements Listener {
      */
 
     private void handlePaidVipPurchase(Player player) {
-
         // 直接设置VIP权限组，不扣除猫粮
-
         setPlayerVipGroup(player);
-
-        player.sendMessage(ChatColor.GREEN + "支付成功！您的VIP权益已激活，有效期为一个月！");
-
+        player.sendMessage(ChatColor.GREEN + "支付成功啦！杂鱼的VIP激活成功啦。有效期一个月！");
     }
-
 
     /**
      * 处理支付成功的MVP购买（不扣除猫粮）
      */
 
     private void handlePaidMvpPurchase(Player player) {
-
         // 直接设置MVP权限组，不扣除猫粮
-
         setPlayerMvpGroup(player);
-
-        player.sendMessage(ChatColor.GREEN + "支付成功！您的MVP权益已激活，有效期为一个月！");
-
+        player.sendMessage(ChatColor.GREEN + "支付成功啦！杂鱼的MVP激活成功啦。有效期一个月！");
     }
-
 
     /**
      * 处理离线MVP购买
      */
 
     private void handleOfflineMvpPurchase(String playerName) {
-
         // 记录到数据库中，待玩家上线时处理
-
         Connection conn = null;
-
         PreparedStatement stmt = null;
 
-
         try {
-
             conn = createDatabaseConnection("neko_level");
-
             String query = "INSERT INTO pending_vip_purchases (player_name, purchase_time) VALUES (?, ?) " +
-
                     "ON DUPLICATE KEY UPDATE purchase_time = ?";
-
             stmt = conn.prepareStatement(query);
-
             stmt.setString(1, playerName);
-
             stmt.setLong(2, System.currentTimeMillis());
-
             stmt.setLong(3, System.currentTimeMillis());
-
             stmt.executeUpdate();
-
         } catch (SQLException e) {
-
             getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 记录离线MVP购买时出错: " + e.getMessage());
-
         } finally {
-
             try {
-
                 if (stmt != null) stmt.close();
-
                 if (conn != null) conn.close();
-
             } catch (SQLException e) {
-
                 getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 关闭数据库资源时出错: " + e.getMessage());
-
             }
-
         }
-
     }
-
 
     /**
      * 检查并处理待处理的VIP购买
@@ -2998,7 +2889,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             if (rs.next()) {
                 // 有待处理的VIP购买
                 setPlayerVipGroup(player);
-                player.sendMessage(ChatColor.GREEN + "欢迎回来！您的VIP权益已激活！");
+                player.sendMessage(ChatColor.GREEN + "杂鱼！你还知道回来呢。你买完VIP怎么跑了");
 
                 // 删除记录
                 PreparedStatement deleteStmt = conn.prepareStatement("DELETE FROM pending_vip_purchases WHERE player_name = ?");
@@ -3006,105 +2897,59 @@ public final class NekoLobby extends JavaPlugin implements Listener {
                 deleteStmt.executeUpdate();
                 deleteStmt.close();
             }
-
         } catch (SQLException e) {
-
             getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 检查待处理VIP购买时出错: " + e.getMessage());
-
         } finally {
-
             try {
-
                 if (rs != null) rs.close();
-
                 if (stmt != null) stmt.close();
-
                 if (conn != null) conn.close();
-
             } catch (SQLException e) {
-
                 getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 关闭数据库资源时出错: " + e.getMessage());
-
             }
-
         }
-
     }
-
 
     /**
      * 检查并处理待处理的MVP购买
      */
 
     private void checkPendingMvpPurchases(Player player) {
-
         String playerName = player.getName();
-
         Connection conn = null;
-
         PreparedStatement stmt = null;
-
         ResultSet rs = null;
 
-
         try {
-
             conn = createDatabaseConnection("neko_level");
-
             String query = "SELECT player_name FROM pending_vip_purchases WHERE player_name = ?";
-
             stmt = conn.prepareStatement(query);
-
             stmt.setString(1, playerName);
-
             rs = stmt.executeQuery();
 
-
             if (rs.next()) {
-
                 // 有待处理的MVP购买
-
                 setPlayerMvpGroup(player);
-
-                player.sendMessage(ChatColor.GREEN + "欢迎回来！您的MVP权益已激活！");
-
+                player.sendMessage(ChatColor.GREEN + "杂鱼！你还知道回来呢。你买完MVP怎么跑了");
 
                 // 删除记录
-
                 PreparedStatement deleteStmt = conn.prepareStatement("DELETE FROM pending_vip_purchases WHERE player_name = ?");
-
                 deleteStmt.setString(1, playerName);
-
                 deleteStmt.executeUpdate();
-
                 deleteStmt.close();
-
             }
-
         } catch (SQLException e) {
-
             getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 检查待处理MVP购买时出错: " + e.getMessage());
-
         } finally {
-
             try {
-
                 if (rs != null) rs.close();
-
                 if (stmt != null) stmt.close();
-
                 if (conn != null) conn.close();
-
             } catch (SQLException e) {
-
                 getServer().getConsoleSender().sendMessage(ChatColor.RED + "[NekoLobby] 关闭数据库资源时出错: " + e.getMessage());
-
             }
-
         }
-
     }
-
 
     private void lockTimeToDay() {
         for (World w : getServer().getWorlds()) {
@@ -3158,108 +3003,108 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             rechargeGUI.setItem(slot, blueGlassPane.clone());
         }
 
-        // VIP权益选项
-        Material diamondMat = Material.matchMaterial("DIAMOND");
-        ItemStack vipItem = diamondMat != null ?
-                new ItemStack(diamondMat) :
-                new ItemStack(Material.matchMaterial("DIAMOND"));
-        ItemMeta vipMeta = vipItem.getItemMeta();
-        vipMeta.setDisplayName(ChatColor.GOLD + "✦ " + ChatColor.BOLD + "VIP权益" + ChatColor.GOLD + " ✦");
-        List<String> vipLore = new ArrayList<>();
-        vipLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "300猫粮" + ChatColor.WHITE + " ✿");
-        vipLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
-        vipLore.add("");
-        vipLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击购买VIP权限" + ChatColor.YELLOW + " ❁");
-        vipMeta.setLore(vipLore);
-        vipItem.setItemMeta(vipMeta);
-        rechargeGUI.setItem(20, vipItem);
-
-        // VIP购买支付宝
-        Material goldIngotMat = Material.matchMaterial("GOLD_INGOT");
-        ItemStack payVipItem = goldIngotMat != null ?
-                new ItemStack(goldIngotMat) :
-                new ItemStack(Material.matchMaterial("GOLD_INGOT")); // Fallback
-        ItemMeta payVipMeta = payVipItem.getItemMeta();
-        payVipMeta.setDisplayName(ChatColor.GOLD + "✦ " + ChatColor.BOLD + "VIP权益 (支付宝)" + ChatColor.GOLD + " ✦");
-        List<String> payVipLore = new ArrayList<>();
-        payVipLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "15元" + ChatColor.WHITE + " ✿");
-        payVipLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
-        payVipLore.add("");
-        payVipLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击用支付宝购买VIP权限" + ChatColor.YELLOW + " ❁");
-        payVipLore.add("");
-        payVipLore.add(ChatColor.RED + "⚠ " + ChatColor.BOLD + "需要真实支付" + ChatColor.RED + " ⚠");
-        payVipMeta.setLore(payVipLore);
-        payVipItem.setItemMeta(payVipMeta);
-        rechargeGUI.setItem(22, payVipItem);
-
-        // VIP购买微信
-        Material redstoneMat = Material.matchMaterial("REDSTONE");
-        ItemStack wxpayVipItem = redstoneMat != null ?
-                new ItemStack(redstoneMat) :
-                new ItemStack(Material.matchMaterial("REDSTONE")); // Fallback
-        ItemMeta wxpayVipMeta = wxpayVipItem.getItemMeta();
-        wxpayVipMeta.setDisplayName(ChatColor.GREEN + "✦ " + ChatColor.BOLD + "VIP权益 (微信)" + ChatColor.GREEN + " ✦");
-        List<String> wxpayVipLore = new ArrayList<>();
-        wxpayVipLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "15元" + ChatColor.WHITE + " ✿");
-        wxpayVipLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
-        wxpayVipLore.add("");
-        wxpayVipLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击用微信购买VIP权限" + ChatColor.YELLOW + " ❁");
-        wxpayVipLore.add("");
-        wxpayVipLore.add(ChatColor.RED + "⚠ " + ChatColor.BOLD + "需要真实支付" + ChatColor.RED + " ⚠");
-        wxpayVipMeta.setLore(wxpayVipLore);
-        wxpayVipItem.setItemMeta(wxpayVipMeta);
-        rechargeGUI.setItem(24, wxpayVipItem);
-
-        // MVP权益选项
-        Material emeraldMat = Material.matchMaterial("EMERALD");
-        ItemStack mvpItem = emeraldMat != null ?
-                new ItemStack(emeraldMat) :
-                new ItemStack(Material.matchMaterial("EMERALD"));
-        ItemMeta mvpMeta = mvpItem.getItemMeta();
-        mvpMeta.setDisplayName(ChatColor.AQUA + "✦ " + ChatColor.BOLD + "MVP权益" + ChatColor.AQUA + " ✦");
-        List<String> mvpLore = new ArrayList<>();
-        mvpLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "600猫粮" + ChatColor.WHITE + " ✿");
-        mvpLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
-        mvpLore.add("");
-        mvpLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击购买MVP权限" + ChatColor.YELLOW + " ❁");
-        mvpMeta.setLore(mvpLore);
-        mvpItem.setItemMeta(mvpMeta);
-        rechargeGUI.setItem(29, mvpItem);
-
-        // MVP购买支付宝
-        Material goldNuggetMat = Material.matchMaterial("GOLD_NUGGET");
-        ItemStack payMvpItem = goldNuggetMat != null ?
-                new ItemStack(goldNuggetMat) :
-                new ItemStack(Material.matchMaterial("GOLD_NUGGET")); // Fallback
-        ItemMeta payMvpMeta = payMvpItem.getItemMeta();
-        payMvpMeta.setDisplayName(ChatColor.AQUA + "✦ " + ChatColor.BOLD + "MVP权益 (支付宝)" + ChatColor.AQUA + " ✦");
-        List<String> payMvpLore = new ArrayList<>();
-        payMvpLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "30元" + ChatColor.WHITE + " ✿");
-        payMvpLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
-        payMvpLore.add("");
-        payMvpLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击用支付宝购买MVP权限" + ChatColor.YELLOW + " ❁");
-        payMvpLore.add("");
-        payMvpLore.add(ChatColor.RED + "⚠ " + ChatColor.BOLD + "需要真实支付" + ChatColor.RED + " ⚠");
-        payMvpMeta.setLore(payMvpLore);
-        payMvpItem.setItemMeta(payMvpMeta);
-        rechargeGUI.setItem(31, payMvpItem);
-
-        // MVP购买微信
-        Material glowstoneDustMat = Material.matchMaterial("GLOWSTONE_DUST");
-        ItemStack wxpayMvpItem = glowstoneDustMat != null ?
-                new ItemStack(glowstoneDustMat) :
-                new ItemStack(Material.matchMaterial("GLOWSTONE_DUST")); // Fallback
-        ItemMeta wxpayMvpMeta = wxpayMvpItem.getItemMeta();
-        wxpayMvpMeta.setDisplayName(ChatColor.LIGHT_PURPLE + "✦ " + ChatColor.BOLD + "MVP权益 (微信)" + ChatColor.LIGHT_PURPLE + " ✦");
-        List<String> wxpayMvpLore = new ArrayList<>();
-        wxpayMvpLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "30元" + ChatColor.WHITE + " ✿");
-        wxpayMvpLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
-        wxpayMvpLore.add("");
-        wxpayMvpLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击用微信购买MVP权限" + ChatColor.YELLOW + " ❁");
-        wxpayMvpLore.add("");
-        wxpayMvpLore.add(ChatColor.RED + "⚠ " + ChatColor.BOLD + "需要真实支付" + ChatColor.RED + " ⚠");
-        wxpayMvpMeta.setLore(wxpayMvpLore);
-        wxpayMvpItem.setItemMeta(wxpayMvpMeta);
+        // VIP权益选项
+        Material diamondMat = Material.matchMaterial("DIAMOND");
+        ItemStack vipItem = diamondMat != null ?
+                new ItemStack(diamondMat) :
+                new ItemStack(Material.matchMaterial("DIAMOND"));
+        ItemMeta vipMeta = vipItem.getItemMeta();
+        vipMeta.setDisplayName(ChatColor.GOLD + "✦ " + ChatColor.BOLD + "VIP权益" + ChatColor.GOLD + " ✦");
+        List<String> vipLore = new ArrayList<>();
+        vipLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "300猫粮" + ChatColor.WHITE + " ✿");
+        vipLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
+        vipLore.add("");
+        vipLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击购买VIP权限" + ChatColor.YELLOW + " ❁");
+        vipMeta.setLore(vipLore);
+        vipItem.setItemMeta(vipMeta);
+        rechargeGUI.setItem(20, vipItem);
+
+        // VIP购买支付宝
+        Material goldIngotMat = Material.matchMaterial("GOLD_INGOT");
+        ItemStack payVipItem = goldIngotMat != null ?
+                new ItemStack(goldIngotMat) :
+                new ItemStack(Material.matchMaterial("GOLD_INGOT")); // Fallback
+        ItemMeta payVipMeta = payVipItem.getItemMeta();
+        payVipMeta.setDisplayName(ChatColor.GOLD + "✦ " + ChatColor.BOLD + "VIP权益 (支付宝)" + ChatColor.GOLD + " ✦");
+        List<String> payVipLore = new ArrayList<>();
+        payVipLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "15元" + ChatColor.WHITE + " ✿");
+        payVipLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
+        payVipLore.add("");
+        payVipLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击用支付宝购买VIP权限" + ChatColor.YELLOW + " ❁");
+        payVipLore.add("");
+        payVipLore.add(ChatColor.RED + "⚠ " + ChatColor.BOLD + "需要真实支付" + ChatColor.RED + " ⚠");
+        payVipMeta.setLore(payVipLore);
+        payVipItem.setItemMeta(payVipMeta);
+        rechargeGUI.setItem(22, payVipItem);
+
+        // VIP购买微信
+        Material redstoneMat = Material.matchMaterial("REDSTONE");
+        ItemStack wxpayVipItem = redstoneMat != null ?
+                new ItemStack(redstoneMat) :
+                new ItemStack(Material.matchMaterial("REDSTONE")); // Fallback
+        ItemMeta wxpayVipMeta = wxpayVipItem.getItemMeta();
+        wxpayVipMeta.setDisplayName(ChatColor.GREEN + "✦ " + ChatColor.BOLD + "VIP权益 (微信)" + ChatColor.GREEN + " ✦");
+        List<String> wxpayVipLore = new ArrayList<>();
+        wxpayVipLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "15元" + ChatColor.WHITE + " ✿");
+        wxpayVipLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
+        wxpayVipLore.add("");
+        wxpayVipLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击用微信购买VIP权限" + ChatColor.YELLOW + " ❁");
+        wxpayVipLore.add("");
+        wxpayVipLore.add(ChatColor.RED + "⚠ " + ChatColor.BOLD + "需要真实支付" + ChatColor.RED + " ⚠");
+        wxpayVipMeta.setLore(wxpayVipLore);
+        wxpayVipItem.setItemMeta(wxpayVipMeta);
+        rechargeGUI.setItem(24, wxpayVipItem);
+
+        // MVP权益选项
+        Material emeraldMat = Material.matchMaterial("EMERALD");
+        ItemStack mvpItem = emeraldMat != null ?
+                new ItemStack(emeraldMat) :
+                new ItemStack(Material.matchMaterial("EMERALD"));
+        ItemMeta mvpMeta = mvpItem.getItemMeta();
+        mvpMeta.setDisplayName(ChatColor.AQUA + "✦ " + ChatColor.BOLD + "MVP权益" + ChatColor.AQUA + " ✦");
+        List<String> mvpLore = new ArrayList<>();
+        mvpLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "600猫粮" + ChatColor.WHITE + " ✿");
+        mvpLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
+        mvpLore.add("");
+        mvpLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击购买MVP权限" + ChatColor.YELLOW + " ❁");
+        mvpMeta.setLore(mvpLore);
+        mvpItem.setItemMeta(mvpMeta);
+        rechargeGUI.setItem(29, mvpItem);
+
+        // MVP购买支付宝
+        Material goldNuggetMat = Material.matchMaterial("GOLD_NUGGET");
+        ItemStack payMvpItem = goldNuggetMat != null ?
+                new ItemStack(goldNuggetMat) :
+                new ItemStack(Material.matchMaterial("GOLD_NUGGET")); // Fallback
+        ItemMeta payMvpMeta = payMvpItem.getItemMeta();
+        payMvpMeta.setDisplayName(ChatColor.AQUA + "✦ " + ChatColor.BOLD + "MVP权益 (支付宝)" + ChatColor.AQUA + " ✦");
+        List<String> payMvpLore = new ArrayList<>();
+        payMvpLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "30元" + ChatColor.WHITE + " ✿");
+        payMvpLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
+        payMvpLore.add("");
+        payMvpLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击用支付宝购买MVP权限" + ChatColor.YELLOW + " ❁");
+        payMvpLore.add("");
+        payMvpLore.add(ChatColor.RED + "⚠ " + ChatColor.BOLD + "需要真实支付" + ChatColor.RED + " ⚠");
+        payMvpMeta.setLore(payMvpLore);
+        payMvpItem.setItemMeta(payMvpMeta);
+        rechargeGUI.setItem(31, payMvpItem);
+
+        // MVP购买微信
+        Material glowstoneDustMat = Material.matchMaterial("GLOWSTONE_DUST");
+        ItemStack wxpayMvpItem = glowstoneDustMat != null ?
+                new ItemStack(glowstoneDustMat) :
+                new ItemStack(Material.matchMaterial("GLOWSTONE_DUST")); // Fallback
+        ItemMeta wxpayMvpMeta = wxpayMvpItem.getItemMeta();
+        wxpayMvpMeta.setDisplayName(ChatColor.LIGHT_PURPLE + "✦ " + ChatColor.BOLD + "MVP权益 (微信)" + ChatColor.LIGHT_PURPLE + " ✦");
+        List<String> wxpayMvpLore = new ArrayList<>();
+        wxpayMvpLore.add(ChatColor.WHITE + "✿ " + ChatColor.GREEN + "价格: " + ChatColor.RED + "30元" + ChatColor.WHITE + " ✿");
+        wxpayMvpLore.add(ChatColor.WHITE + "✿ " + ChatColor.AQUA + "有效期: " + ChatColor.LIGHT_PURPLE + "一个月" + ChatColor.WHITE + " ✿");
+        wxpayMvpLore.add("");
+        wxpayMvpLore.add(ChatColor.YELLOW + "❁ " + ChatColor.ITALIC + "点击用微信购买MVP权限" + ChatColor.YELLOW + " ❁");
+        wxpayMvpLore.add("");
+        wxpayMvpLore.add(ChatColor.RED + "⚠ " + ChatColor.BOLD + "需要真实支付" + ChatColor.RED + " ⚠");
+        wxpayMvpMeta.setLore(wxpayMvpLore);
+        wxpayMvpItem.setItemMeta(wxpayMvpMeta);
         rechargeGUI.setItem(33, wxpayMvpItem);
 
 
@@ -3276,12 +3121,12 @@ public final class NekoLobby extends JavaPlugin implements Listener {
             // 1.13及以上版本
             headMeta.setOwningPlayer(p);
         }
-        headMeta.setDisplayName(ChatColor.LIGHT_PURPLE + "★ " + ChatColor.BOLD + "玩家信息" + ChatColor.LIGHT_PURPLE + " ★");
+        headMeta.setDisplayName(ChatColor.LIGHT_PURPLE + "★ " + ChatColor.BOLD + "杂鱼信息" + ChatColor.LIGHT_PURPLE + " ★");
         List<String> headLore = new ArrayList<>();
-        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "玩家: " + ChatColor.YELLOW + p.getName() + ChatColor.WHITE + " ✿");
-        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "当前猫粮: " + ChatColor.LIGHT_PURPLE + catFood + ChatColor.WHITE + " ✿");
+        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "杂鱼: " + ChatColor.YELLOW + p.getName() + ChatColor.WHITE + " ✿");
+        headLore.add(ChatColor.WHITE + "✿ " + ChatColor.GOLD + "杂鱼的猫粮: " + ChatColor.LIGHT_PURPLE + catFood + ChatColor.WHITE + " ✿");
         headLore.add("");
-        headLore.add(ChatColor.LIGHT_PURPLE + "❀ " + ChatColor.BOLD + "点击刷新信息" + ChatColor.LIGHT_PURPLE + " ❁");
+        headLore.add(ChatColor.LIGHT_PURPLE + "❀ " + ChatColor.BOLD + "点击刷新杂鱼的信息" + ChatColor.LIGHT_PURPLE + " ❁");
         headMeta.setLore(headLore);
         playerHead.setItemMeta(headMeta);
         rechargeGUI.setItem(49, playerHead);
@@ -3297,7 +3142,7 @@ public final class NekoLobby extends JavaPlugin implements Listener {
     private void handleRechargeGUIInteraction(InventoryClickEvent e) {
         e.setCancelled(true); // 防止玩家拿取物品
         Player player = (Player) e.getWhoClicked();
-        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 玩家 " + player.getName() + " 点击了权益购买GUI");
+        // getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 玩家 " + player.getName() + " 点击了权益购买GUI");
         ItemStack clickedItem = e.getCurrentItem();
 
         // 添加点击位置调试信息
@@ -3322,141 +3167,137 @@ public final class NekoLobby extends JavaPlugin implements Listener {
         if (clickedItem == null || clickedItem.getType() == Material.AIR || isGlassPane) {
             return;
         }
-        // 使用槽位检测来处理VIP权益购买（槽位20）
-        if (e.getSlot() == 20) { // VIP权益选项
-            // 检查玩家是否有足够的猫粮
-            if (catFood < 300) {
-                player.sendMessage(ChatColor.RED + "猫粮不足！购买VIP权益需要300猫粮。");
-                return;
-            }
-            // 扣除猫粮
-            deductCatFood(player, 300);
-            // 设置玩家VIP权限组
-            setPlayerVipGroup(player);
-            player.sendMessage(ChatColor.GREEN + "VIP权益购买成功！");
-            // 重新打开GUI以刷新信息
-            openRechargeGUI(player);
-            return;
-        }
-
-        // 支付宝支付VIP购买（槽位22）
-        if (e.getSlot() == 22) { // 支付宝VIP权益选项（现金支付）
-            player.sendMessage(ChatColor.YELLOW + "正在为您生成支付宝支付二维码...");
-            // 创建Z-Pay支付宝支付订单
-            createZPayOrder(player, "alipay");
-            return;
-        }
-
-        // 微信支付VIP购买（槽位24）
-        if (e.getSlot() == 24) { // 微信VIP权益选项（现金支付）
-            player.sendMessage(ChatColor.YELLOW + "正在为您生成微信支付二维码...");
-            // 创建Z-Pay微信支付订单
-            createZPayOrder(player, "wxpay");
-            return;
-        }
-
-        // 使用槽位检测来处理MVP权益购买（槽位29）
-        if (e.getSlot() == 29) { // MVP权益选项
-            // 检查玩家是否有足够的猫粮
-            if (catFood < 600) {
-                player.sendMessage(ChatColor.RED + "猫粮不足！购买MVP权益需要600猫粮。");
-                return;
-            }
-
-            // 扣除猫粮
-            deductCatFood(player, 600);
-            // 设置玩家MVP权限组
-            setPlayerMvpGroup(player);
-            player.sendMessage(ChatColor.GREEN + "MVP权益购买成功！");
-            // 重新打开GUI以刷新信息
-            openRechargeGUI(player);
-            return;
-        }
-
-        // 支付宝支付MVP购买（槽位31）
-        if (e.getSlot() == 31) { // 支付宝MVP权益选项（现金支付）
-            player.sendMessage(ChatColor.YELLOW + "正在为您生成支付宝支付二维码...");
-            // 创建Z-Pay支付宝支付订单
-            String orderNo = zPayUtil.generateOrderNo();
-            String subject = "梦幻次元-MVP权益(1个月)";
-            String amount = "30.00"; // 30元
-            String type = "alipay"; // 支付宝
-            String ip = player.getAddress() != null ? player.getAddress().getAddress().getHostAddress() : "127.0.0.1";
-            String param = "player:" + player.getName(); // 附加参数，包含玩家名称用于后续识别
-
-            // 创建支付订单并获取二维码URL
-            String qrCodeUrl = zPayUtil.getPaymentQRCodeUrl(orderNo, subject, amount, type, ip, param);
-
-            if (qrCodeUrl != null && !qrCodeUrl.isEmpty()) {
-                // 成功获取二维码URL，显示在地图上
-                player.sendMessage(ChatColor.GREEN + "MVP支付订单创建成功！");
-                player.sendMessage(ChatColor.YELLOW + "正在生成支付二维码地图...");
-                player.closeInventory(); // 关闭GUI
-
-                // 在单独的线程中处理二维码地图渲染，避免阻塞主线程
-                Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
-                    QRCodeMapRenderer.showQRCodeOnMap(player, qrCodeUrl);
-                });
-            } else {
-                player.sendMessage(ChatColor.RED + "创建支付订单失败：无法获取支付二维码");
-                // 添加更多详细错误信息
-                String errorDetails = zPayUtil.getLastError();
-                if (errorDetails != null && !errorDetails.isEmpty()) {
-                    player.sendMessage(ChatColor.RED + "错误详情: " + errorDetails);
-                }
-            }
-            return;
-        }
-
-        // 微信支付MVP购买（槽位33）
-        if (e.getSlot() == 33) { // 微信MVP权益选项（现金支付）
-            player.sendMessage(ChatColor.YELLOW + "正在为您生成微信支付二维码...");
-            // 创建Z-Pay微信支付订单
-            String orderNo = zPayUtil.generateOrderNo();
-            String subject = "梦幻次元-MVP权益(1个月)";
-            String amount = "30.00"; // 30元
-            String type = "wxpay"; // 微信
-            String ip = player.getAddress() != null ? player.getAddress().getAddress().getHostAddress() : "127.0.0.1";
-            String param = "player:" + player.getName(); // 附加参数，包含玩家名称用于后续识别
-
-            // 创建支付订单并获取二维码URL
-            String qrCodeUrl = zPayUtil.getPaymentQRCodeUrl(orderNo, subject, amount, type, ip, param);
-
-            if (qrCodeUrl != null && !qrCodeUrl.isEmpty()) {
-                // 成功获取二维码URL，显示在地图上
-                player.sendMessage(ChatColor.GREEN + "MVP支付订单创建成功！");
-                player.sendMessage(ChatColor.YELLOW + "正在生成支付二维码地图...");
-                player.closeInventory(); // 关闭GUI
-
-                // 在单独的线程中处理二维码地图渲染，避免阻塞主线程
-                Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
-                    QRCodeMapRenderer.showQRCodeOnMap(player, qrCodeUrl);
-                });
-            } else {
-                player.sendMessage(ChatColor.RED + "创建支付订单失败：无法获取支付二维码");
-                // 添加更多详细错误信息
-                String errorDetails = zPayUtil.getLastError();
-                if (errorDetails != null && !errorDetails.isEmpty()) {
-                    player.sendMessage(ChatColor.RED + "错误详情: " + errorDetails);
-                }
-            }
-            return;
-        }
-
-        // 如果点击的是玩家信息头颅，刷新GUI（槽位49）
-        if (e.getSlot() == 49) {
-            Material playerHeadMat = Material.matchMaterial("SKULL_ITEM");
-
-            if ((playerHeadMat != null && clickedItem.getType() == playerHeadMat) || clickedItem.getType() == Material.matchMaterial("SKULL_ITEM")) {
-                getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 玩家 " + player.getName() + " 点击了玩家头颅项目");
-
-                // 重新打开GUI以刷新信息
-                openRechargeGUI(player);
-                return;
-            }
-        }
-
-        // 如果没有匹配任何项目，输出调试信息
-        getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 玩家 " + player.getName() + " 点击了未知项目: " + clickedItem.getType().name() + " (槽位: " + e.getSlot() + ")");
+        // 使用槽位检测来处理VIP权益购买（槽位20）
+        if (e.getSlot() == 20) { // VIP权益选项
+            // 检查玩家是否有足够的猫粮
+            if (catFood < 300) {
+                player.sendMessage(ChatColor.RED + "杂鱼杂鱼！你的猫粮都不够呢！");
+                return;
+            }
+
+            // 扣除猫粮
+            deductCatFood(player, 300);
+            // 设置玩家VIP权限组
+            setPlayerVipGroup(player);
+            player.sendMessage(ChatColor.GREEN + "真是大杂鱼呢，你的VIP购买成功了喔！");
+            // 重新打开GUI以刷新信息
+            openRechargeGUI(player);
+            return;
+        }
+
+        // 支付宝支付VIP购买（槽位22）
+        if (e.getSlot() == 22) { // 支付宝VIP权益选项（现金支付）
+            player.sendMessage(ChatColor.YELLOW + "正在为您生成支付宝支付二维码...");
+            // 创建Z-Pay支付宝支付订单
+            createZPayOrder(player, "alipay");
+            return;
+        }
+
+        // 微信支付VIP购买（槽位24）
+        if (e.getSlot() == 24) { // 微信VIP权益选项（现金支付）
+            player.sendMessage(ChatColor.YELLOW + "正在给你创建支付二维码呢杂鱼");
+            // 创建Z-Pay微信支付订单
+            createZPayOrder(player, "wxpay");
+            return;
+        }
+
+        // 使用槽位检测来处理MVP权益购买（槽位29）
+        if (e.getSlot() == 29) { // MVP权益选项
+            // 检查玩家是否有足够的猫粮
+            if (catFood < 600) {
+                player.sendMessage(ChatColor.RED + "真是杂鱼，你的猫粮都不够就想买吗？");
+                return;
+            }
+
+            // 扣除猫粮
+            deductCatFood(player, 600);
+            // 设置玩家MVP权限组
+            setPlayerMvpGroup(player);
+            player.sendMessage(ChatColor.GREEN + "杂鱼！MVP购买成功啦！");
+            // 重新打开GUI以刷新信息
+            openRechargeGUI(player);
+            return;
+        }
+
+        // 支付宝支付MVP购买（槽位31）
+        if (e.getSlot() == 31) { // 支付宝MVP权益选项（现金支付）
+            player.sendMessage(ChatColor.YELLOW + "正在给你创建支付二维码呢杂鱼");
+
+            // 创建Z-Pay支付宝支付订单
+            String orderNo = zPayUtil.generateOrderNo();
+            String subject = "梦幻次元-MVP权益(1个月)";
+            String amount = "30.00"; // 30元
+            String type = "alipay"; // 支付宝
+            String ip = player.getAddress() != null ? player.getAddress().getAddress().getHostAddress() : "127.0.0.1";
+            String param = "player:" + player.getName(); // 附加参数，包含玩家名称用于后续识别
+
+            // 创建支付订单并获取二维码URL
+            String qrCodeUrl = zPayUtil.getPaymentQRCodeUrl(orderNo, subject, amount, type, ip, param);
+
+            if (qrCodeUrl != null && !qrCodeUrl.isEmpty()) {
+                // 成功获取二维码URL，显示在地图上
+                player.sendMessage(ChatColor.GREEN + "MVP支付订单创建成功！");
+                player.sendMessage(ChatColor.YELLOW + "正在生成支付二维码地图...");
+                player.closeInventory(); // 关闭GUI
+
+                // 在单独的线程中处理二维码地图渲染，避免阻塞主线程
+                Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
+                    QRCodeMapRenderer.showQRCodeOnMap(player, qrCodeUrl);
+                });
+            } else {
+                player.sendMessage(ChatColor.RED + "真是杂鱼呢，订单创建失败了呢");
+
+                // 添加更多详细错误信息
+                String errorDetails = zPayUtil.getLastError();
+                if (errorDetails != null && !errorDetails.isEmpty()) {
+                    player.sendMessage(ChatColor.RED + "错误详情: " + errorDetails);
+                }
+            }
+            return;
+        }
+
+        // 微信支付MVP购买（槽位33）
+        if (e.getSlot() == 33) { // 微信MVP权益选项（现金支付）
+            player.sendMessage(ChatColor.YELLOW + "正在为您生成微信支付二维码...");
+            // 创建Z-Pay微信支付订单
+            String orderNo = zPayUtil.generateOrderNo();
+            String subject = "梦幻次元-MVP权益(1个月)";
+            String amount = "30.00"; // 30元
+            String type = "wxpay"; // 微信
+            String ip = player.getAddress() != null ? player.getAddress().getAddress().getHostAddress() : "127.0.0.1";
+            String param = "player:" + player.getName(); // 附加参数，包含玩家名称用于后续识别
+
+            // 创建支付订单并获取二维码URL
+            String qrCodeUrl = zPayUtil.getPaymentQRCodeUrl(orderNo, subject, amount, type, ip, param);
+            if (qrCodeUrl != null && !qrCodeUrl.isEmpty()) {
+                // 成功获取二维码URL，显示在地图上
+                player.sendMessage(ChatColor.GREEN + "MVP支付订单创建成功！");
+                player.sendMessage(ChatColor.YELLOW + "正在给你创建支付二维码呢杂鱼");
+                player.closeInventory(); // 关闭GUI
+                // 在单独的线程中处理二维码地图渲染，避免阻塞主线程
+                Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
+                    QRCodeMapRenderer.showQRCodeOnMap(player, qrCodeUrl);
+                });
+            } else {
+                player.sendMessage(ChatColor.RED + "创建支付订单失败了喔杂鱼~");
+                // 添加更多详细错误信息
+                String errorDetails = zPayUtil.getLastError();
+                if (errorDetails != null && !errorDetails.isEmpty()) {
+                    player.sendMessage(ChatColor.RED + "错误详情: " + errorDetails);
+                }
+            }
+            return;
+        }
+
+        // 如果点击的是玩家信息头颅，刷新GUI（槽位49）
+        if (e.getSlot() == 49) {
+            Material playerHeadMat = Material.matchMaterial("SKULL_ITEM");
+            if ((playerHeadMat != null && clickedItem.getType() == playerHeadMat) || clickedItem.getType() == Material.matchMaterial("SKULL_ITEM")) {
+                // getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "[NekoLobby Debug] 玩家 " + player.getName() + " 点击了玩家头颅项目");
+                // 重新打开GUI以刷新信息
+                openRechargeGUI(player);
+                return;
+            }
+        }
     }
 }
